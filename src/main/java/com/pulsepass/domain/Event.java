@@ -78,6 +78,8 @@ public class Event {
     }
 
     public void setVenue(Venue venue) { this.venue = venue; }
+    public void setStatus(EventStatus status) { this.status = status; }
+
     public void addArtist(Artist artist) {
         artists.add(artist);
         artist.getEvents().add(this);

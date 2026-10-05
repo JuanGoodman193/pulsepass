@@ -6,7 +6,7 @@ PulsePass
 
 ## Purpose
 
-Implementar una base de persistencia consistente para eventos, venues, artistas, usuarios, perfiles y tickets.
+Implementar persistencia y servicios para eventos, venues, artistas, usuarios, perfiles y tickets.
 
 ## Version
 
@@ -14,4 +14,4 @@ Implementar una base de persistencia consistente para eventos, venues, artistas,
 
 ## Technical scope
 
-Java 21, Spring Boot 4, Spring Data JPA, Flyway, PostgreSQL y Testcontainers. El proyecto usa `ddl-auto=validate` y no incluye API REST ni capa Service en este MVP.
+Java 21, Spring Boot 4, Spring Data JPA, Flyway, PostgreSQL, Testcontainers y MapStruct. Hibernate usa `ddl-auto=validate`; la aplicación incluye interfaces e implementaciones Service, DTOs y reglas de negocio. No incluye API REST.

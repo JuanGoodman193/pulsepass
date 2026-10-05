@@ -67,6 +67,7 @@ public class Ticket {
     public TicketType getType() { return type; }
     public BigDecimal getPrice() { return price; }
     public TicketStatus getStatus() { return status; }
+    public void setStatus(TicketStatus status) { this.status = status; }
     public LocalDateTime getPurchaseDate() { return purchaseDate; }
     public User getUser() { return user; }
     public Event getEvent() { return event; }
