@@ -1,10 +1,10 @@
 # PulsePass
 
-PulsePass es una base de persistencia para una plataforma de eventos, artistas y entradas. El proyecto implementa el MVP académico definido en `PRD_PulsePass.md` con Java 21, Spring Boot 4, Spring Data JPA, Flyway y PostgreSQL.
+PulsePass es una plataforma académica para gestionar eventos, artistas, usuarios y entradas. Combina la capa de persistencia del MVP definido en `PRD_PulsePass.md` con la capa de servicios del taller posterior, usando Java 21, Spring Boot 4, Spring Data JPA, Flyway, PostgreSQL y MapStruct.
 
 ## Alcance
 
-Este proyecto cubre persistencia, integridad relacional y consultas. No incluye API REST, frontend, autenticación, pagos ni una capa Service, porque están fuera del alcance del PRD de persistencia.
+El proyecto cubre persistencia, integridad relacional, consultas y casos de uso de servicio para venues, artistas, eventos, usuarios y tickets. La capa Service aplica reglas de negocio, coordina repositories, controla transacciones y expone DTOs mapeados con MapStruct. No incluye API REST, frontend, Spring Security, pasarela de pagos ni Testcontainers para las pruebas unitarias de servicios.
 
 ## Modelo
 
@@ -36,9 +36,15 @@ Los repositories usan métodos heredados, Query Methods y JPQL sin SQL nativo:
 - Tickets por email/estado, tickets pagados por evento y conteo de ventas.
 - Tickets de eventos futuros ordenados cronológicamente.
 
+## Capa de servicios
+
+Cada servicio tiene una interfaz y una implementación. Las lecturas usan transacciones de solo lectura y las escrituras son transaccionales. Las reglas de negocio producen excepciones de dominio y los contratos usan DTOs inmutables implementados como `record`.
+
+La compra de entradas valida usuario, evento, edad y capacidad; calcula el precio dentro del sistema y actualiza el evento a `SOLD_OUT` en la misma transacción cuando se vende el último cupo.
+
 ## Ejecutar
 
-Requisitos: JDK 21, Maven 3.9+ y PostgreSQL para ejecutar la aplicación. Las pruebas requieren Docker porque Testcontainers inicia PostgreSQL automáticamente.
+Requisitos: JDK 21, Maven 3.9+ y PostgreSQL para ejecutar la aplicación. Las pruebas de integración de persistencia requieren Docker porque Testcontainers inicia PostgreSQL automáticamente; las pruebas unitarias de servicios no requieren base de datos.
 
 ```bash
 mvn spring-boot:run
@@ -58,4 +64,4 @@ DB_PASSWORD=postgres
 mvn clean test
 ```
 
-Las pruebas no usan H2. `PersistenceIntegrationTest` verifica las migraciones Flyway, asociaciones JPA, Query Methods, JPQL, conteo de tickets pagados y una restricción `UNIQUE` real de PostgreSQL.
+Las pruebas no usan H2. `PersistenceIntegrationTest` verifica las migraciones Flyway, asociaciones JPA, Query Methods, JPQL, conteo de tickets pagados y una restricción `UNIQUE` real de PostgreSQL. Los tests de servicio usan JUnit 5, Mockito y AssertJ para probar las reglas sin Spring ApplicationContext ni PostgreSQL.
