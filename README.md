@@ -42,9 +42,47 @@ Cada servicio tiene una interfaz y una implementación. Las lecturas usan transa
 
 La compra de entradas valida usuario, evento, edad y capacidad; calcula el precio dentro del sistema y actualiza el evento a `SOLD_OUT` en la misma transacción cuando se vende el último cupo.
 
+## Capa de Controladores REST (Fase 3)
+
+La capa de controladores expone la API REST de PulsePass mediante Spring MVC, Bean Validation y `@RestControllerAdvice`:
+
+- **VenueController** (`/api/venues`):
+  - `GET /api/venues/{code}`: Consulta de venue por código (200 OK / 404 Not Found).
+  - `GET /api/venues/active`: Listado de venues activos (200 OK).
+- **EventController** (`/api/events`):
+  - `POST /api/events`: Creación de evento en estado DRAFT (201 Created / 400 Bad Request / 409 Conflict).
+  - `GET /api/events/{eventCode}`: Consulta de evento por código (200 OK / 404 Not Found).
+  - `GET /api/events/published`: Listado de eventos en estado PUBLISHED (200 OK).
+  - `PATCH /api/events/{eventCode}/publish`: Publicación de evento DRAFT a PUBLISHED (200 OK / 409 Conflict).
+  - `POST /api/events/{eventCode}/artists/{artistId}`: Asociación de artista a evento (200 OK / 409 Conflict).
+  - `GET /api/events/by-artist?stageName=...`: Búsqueda de eventos por nombre artístico (200 OK).
+- **ArtistController** (`/api/artists`):
+  - `GET /api/artists/{id}`: Consulta de artista por ID (200 OK / 404 Not Found).
+  - `GET /api/artists/by-stage-name?stageName=...`: Consulta por nombre artístico (200 OK / 404 Not Found).
+  - `GET /api/artists/active`: Listado de artistas activos (200 OK).
+- **UserController** (`/api/users`):
+  - `POST /api/users`: Registro de usuario (201 Created / 400 Bad Request / 409 Conflict).
+  - `GET /api/users/by-email?email=...`: Consulta de usuario por email (200 OK / 404 Not Found).
+  - `GET /api/users/by-username?username=...`: Consulta de usuario por username (200 OK / 404 Not Found).
+- **TicketController** (`/api`):
+  - `POST /api/tickets`: Compra de entrada en estado PAID (201 Created / 400 Bad Request / 404 Not Found / 409 Conflict).
+  - `GET /api/tickets/{ticketCode}`: Consulta de entrada por código (200 OK / 404 Not Found).
+  - `GET /api/tickets/by-user?email=...`: Consulta de entradas de un usuario (200 OK).
+  - `GET /api/events/{eventCode}/tickets/paid`: Consulta de entradas PAID de un evento (200 OK).
+  - `PATCH /api/tickets/{ticketCode}/cancel`: Cancelación de entrada PAID a CANCELLED (200 OK / 409 Conflict).
+  - `PATCH /api/tickets/{ticketCode}/use`: Validación y uso de entrada PAID a USED (200 OK / 409 Conflict).
+
+### Manejo Global de Errores
+
+Todos los errores HTTP responden con el contrato uniforme `ErrorResponse`:
+- `400 Bad Request`: Validaciones estructurales fallidas (Bean Validation) o JSON mal formado.
+- `404 Not Found`: Recursos no encontrados (`ResourceNotFoundException`).
+- `409 Conflict`: Conflictos de unicidad (`DuplicateResourceException`) o reglas de negocio incumplidas (`BusinessRuleException`).
+- `500 Internal Server Error`: Errores internos no controlados sin exponer stack traces ni detalles sensibles.
+
 ## Ejecutar
 
-Requisitos: JDK 21, Maven 3.9+ y PostgreSQL para ejecutar la aplicación. Las pruebas de integración de persistencia requieren Docker porque Testcontainers inicia PostgreSQL automáticamente; las pruebas unitarias de servicios no requieren base de datos.
+Requisitos: JDK 21, Maven 3.9+ y PostgreSQL para ejecutar la aplicación. Las pruebas de integración de persistencia requieren Docker porque Testcontainers inicia PostgreSQL automáticamente; las pruebas unitarias de servicios y de controladores no requieren base de datos.
 
 ```bash
 mvn spring-boot:run
@@ -60,8 +98,22 @@ DB_PASSWORD=postgres
 
 ## Pruebas
 
+Para ejecutar las pruebas unitarias de servicios y controladores (sin requerir Docker):
+
+```bash
+mvn test -Dtest="*ServiceImplTest,*ControllerTest"
+```
+
+O específicamente las pruebas de la capa de controladores:
+
+```bash
+mvn test -Dtest="*ControllerTest"
+```
+
+Para ejecutar la suite completa (requiere Docker Desktop activo para Testcontainers de PostgreSQL):
+
 ```bash
 mvn clean test
 ```
 
-Las pruebas no usan H2. `PersistenceIntegrationTest` verifica las migraciones Flyway, asociaciones JPA, Query Methods, JPQL, conteo de tickets pagados y una restricción `UNIQUE` real de PostgreSQL. Los tests de servicio usan JUnit 5, Mockito y AssertJ para probar las reglas sin Spring ApplicationContext ni PostgreSQL.
+Las pruebas no usan H2. `PersistenceIntegrationTest` verifica las migraciones Flyway, asociaciones JPA, Query Methods, JPQL, conteo de tickets pagados y una restricción `UNIQUE` real de PostgreSQL con Testcontainers. Los tests de servicio prueban las reglas de negocio aisladas con mocks de Mockito. Las pruebas de controlador utilizan `@WebMvcTest`, MockMvc y `@MockitoBean` para validar contratos HTTP, serialización JSON, códigos de estado y manejo de excepciones sin levantar base de datos ni ApplicationContext completo.
