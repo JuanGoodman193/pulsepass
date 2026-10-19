@@ -46,6 +46,9 @@ class EventServiceImplTest {
     private ArtistRepository artistRepository;
 
     @Mock
+    private AuthorizationService authorizationService;
+
+    @Mock
     private EventMapper mapper;
 
     @InjectMocks
@@ -63,6 +66,7 @@ class EventServiceImplTest {
         );
 
         when(eventRepository.findByEventCode("CMF-2026")).thenReturn(Optional.of(event));
+        when(authorizationService.isStaffOrAdmin()).thenReturn(true);
         when(mapper.toResponse(event)).thenReturn(response);
 
         // ACT

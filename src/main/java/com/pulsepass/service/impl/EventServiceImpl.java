@@ -14,6 +14,7 @@ import com.pulsepass.mapper.EventMapper;
 import com.pulsepass.repository.ArtistRepository;
 import com.pulsepass.repository.EventRepository;
 import com.pulsepass.repository.VenueRepository;
+import com.pulsepass.service.AuthorizationService;
 import com.pulsepass.service.EventService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,17 +29,20 @@ public class EventServiceImpl implements EventService {
     private final EventRepository eventRepository;
     private final VenueRepository venueRepository;
     private final ArtistRepository artistRepository;
+    private final AuthorizationService authorizationService;
     private final EventMapper mapper;
 
     public EventServiceImpl(
             EventRepository eventRepository,
             VenueRepository venueRepository,
             ArtistRepository artistRepository,
+            AuthorizationService authorizationService,
             EventMapper mapper) {
 
         this.eventRepository = eventRepository;
         this.venueRepository = venueRepository;
         this.artistRepository = artistRepository;
+        this.authorizationService = authorizationService;
         this.mapper = mapper;
     }
 
@@ -87,9 +91,15 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public EventResponse findByCode(String eventCode) {
-        return eventRepository.findByEventCode(eventCode)
-                .map(mapper::toResponse)
+        Event event = eventRepository.findByEventCode(eventCode)
                 .orElseThrow(() -> new ResourceNotFoundException("Event not found: " + eventCode));
+
+        // FR-SEC-EVT-02: Público solo si publicado; para otros estados STAFF/ADMIN, evitando revelar borradores
+        if (event.getStatus() != EventStatus.PUBLISHED && (authorizationService == null || !authorizationService.isStaffOrAdmin())) {
+            throw new ResourceNotFoundException("Event not found: " + eventCode);
+        }
+
+        return mapper.toResponse(event);
     }
 
     @Override
@@ -155,8 +165,16 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public List<EventSummaryResponse> findByArtist(String stageName) {
-        return eventRepository.findByArtistStageName(stageName)
-                .stream()
+        List<Event> events = eventRepository.findByArtistStageName(stageName);
+
+        // FR-SEC-EVT-06: Público únicamente para eventos publicados; otros estados requieren STAFF/ADMIN
+        if (authorizationService == null || !authorizationService.isStaffOrAdmin()) {
+            events = events.stream()
+                    .filter(e -> e.getStatus() == EventStatus.PUBLISHED)
+                    .toList();
+        }
+
+        return events.stream()
                 .map(mapper::toSummary)
                 .toList();
     }

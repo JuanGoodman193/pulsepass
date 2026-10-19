@@ -14,6 +14,7 @@ import com.pulsepass.mapper.TicketMapper;
 import com.pulsepass.repository.EventRepository;
 import com.pulsepass.repository.TicketRepository;
 import com.pulsepass.repository.UserRepository;
+import com.pulsepass.service.AuthorizationService;
 import com.pulsepass.service.TicketService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,23 +32,31 @@ public class TicketServiceImpl implements TicketService {
     private final TicketRepository ticketRepository;
     private final UserRepository userRepository;
     private final EventRepository eventRepository;
+    private final AuthorizationService authorizationService;
     private final TicketMapper mapper;
 
     public TicketServiceImpl(
             TicketRepository ticketRepository,
             UserRepository userRepository,
             EventRepository eventRepository,
+            AuthorizationService authorizationService,
             TicketMapper mapper) {
 
         this.ticketRepository = ticketRepository;
         this.userRepository = userRepository;
         this.eventRepository = eventRepository;
+        this.authorizationService = authorizationService;
         this.mapper = mapper;
     }
 
     @Override
     @Transactional
     public TicketResponse purchase(PurchaseTicketRequest request) {
+        // FR-SEC-TKT-01: USER solo puede comprar para sí mismo. Si userEmail es ajeno -> 403
+        if (authorizationService != null) {
+            authorizationService.checkTicketPurchase(request.userEmail());
+        }
+
         // 1. Buscar y validar User
         User user = userRepository.findByEmailIgnoreCase(request.userEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + request.userEmail()));
@@ -122,13 +131,24 @@ public class TicketServiceImpl implements TicketService {
 
     @Override
     public TicketResponse findByCode(String ticketCode) {
-        return ticketRepository.findByTicketCode(ticketCode)
-                .map(mapper::toResponse)
+        Ticket ticket = ticketRepository.findByTicketCode(ticketCode)
                 .orElseThrow(() -> new ResourceNotFoundException("Ticket not found with code: " + ticketCode));
+
+        // FR-SEC-TKT-02: Propietario o STAFF/ADMIN
+        if (authorizationService != null) {
+            authorizationService.checkTicketAccess(ticket);
+        }
+
+        return mapper.toResponse(ticket);
     }
 
     @Override
     public List<TicketResponse> findByUserEmail(String email) {
+        // FR-SEC-TKT-03: Propietario o ADMIN
+        if (authorizationService != null) {
+            authorizationService.checkTicketsByUserEmail(email);
+        }
+
         return ticketRepository.findByUserEmailIgnoreCaseOrderByPurchaseDateDesc(email)
                 .stream()
                 .map(mapper::toResponse)
@@ -148,6 +168,11 @@ public class TicketServiceImpl implements TicketService {
     public TicketResponse cancel(String ticketCode) {
         Ticket ticket = ticketRepository.findByTicketCode(ticketCode)
                 .orElseThrow(() -> new ResourceNotFoundException("Ticket not found with code: " + ticketCode));
+
+        // FR-SEC-TKT-05: Propietario (USER) o ADMIN expresamente autorizado
+        if (authorizationService != null) {
+            authorizationService.checkTicketCancel(ticket);
+        }
 
         // BR-TICKET-010 y BR-TICKET-011: Solo puede cancelarse un ticket PAID
         if (ticket.getStatus() != TicketStatus.PAID) {

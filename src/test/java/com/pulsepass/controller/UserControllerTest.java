@@ -45,6 +45,7 @@ class UserControllerTest {
                 {
                   "username": "andrea",
                   "email": "andrea@example.com",
+                  "password": "Password12345!",
                   "firstName": "Andrea",
                   "lastName": "Lopez",
                   "phone": "3001234567",
@@ -116,6 +117,7 @@ class UserControllerTest {
                 {
                   "username": "andrea",
                   "email": "andrea@example.com",
+                  "password": "Password12345!",
                   "firstName": "Andrea",
                   "lastName": "Lopez",
                   "birthDate": "1995-05-10"
@@ -144,6 +146,7 @@ class UserControllerTest {
                 {
                   "username": "futureuser",
                   "email": "future@example.com",
+                  "password": "Password12345!",
                   "firstName": "Future",
                   "lastName": "User",
                   "birthDate": "2099-01-01"

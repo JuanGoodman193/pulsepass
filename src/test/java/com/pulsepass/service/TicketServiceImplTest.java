@@ -53,6 +53,9 @@ class TicketServiceImplTest {
     private EventRepository eventRepository;
 
     @Mock
+    private AuthorizationService authorizationService;
+
+    @Mock
     private TicketMapper mapper;
 
     @InjectMocks
