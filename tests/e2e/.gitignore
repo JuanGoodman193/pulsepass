@@ -1,0 +1,24 @@
+# Tests E2E - Postman y entornos locales
+# Exclusiones de seguridad para prevenir versionado de secretos, evidencias privadas o configuraciones de ejecución
+
+# Archivos de variables locales y secretos
+*.local.json
+!PulsePass-local.postman_environment.json
+.env
+.env.local
+secrets/
+private/
+tokens/
+
+# Logs de ejecución y evidencias temporales privadas
+*.log
+captures/
+screenshots/
+temp/
+scratch/
+
+# Archivos de sistema y editores
+.DS_Store
+Thumbs.db
+*.bak
+*.tmp

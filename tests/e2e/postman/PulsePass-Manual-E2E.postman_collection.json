@@ -1,0 +1,2892 @@
+{
+  "info": {
+    "_postman_id": "7b8e1a3c-5d9f-4b2a-8c1e-9f0a2b3c4d5e",
+    "name": "PulsePass — E2E Manual",
+    "description": "Colección oficial de pruebas end-to-end (E2E) manuales para PulsePass (Fase 5).\n\nREGLAS OBLIGATORIAS:\n1. Ejecución manual exclusiva con el botón Send desde Postman Desktop / Web Agent.\n2. Prohibido el uso de scripts en Pre-request o Tests, pm.test, pm.expect, Collection Runner o Newman.\n3. Los tokens JWT y códigos generados deben copiarse manualmente a las variables del entorno.\n4. En esta versión del repositorio, la Capa de Controladores REST (Fase 3) está implementada (20 rutas de negocio), mientras que la Capa de Seguridad Spring Security + JJWT y AuthController (Fase 4: /api/auth/login, /api/auth/me) se encuentra como dependencia bloqueante pendiente de integración.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "00 Preparación / conectividad",
+      "description": "Comprobación básica de conectividad con la API y lectura inicial de catálogos públicos.",
+      "item": [
+        {
+          "name": "[TC-CONN-001] Verificar conectividad pública (Venues activos)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/venues/active",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "venues", "active"]
+            },
+            "description": "ID: TC-CONN-001\nObjetivo: Comprobar que la API PulsePass responde y devuelve la lista de venues activos\nPrecondiciones: Aplicación iniciada en localhost:8080 y PostgreSQL pulsepass_e2e accesible con migraciones y seed\nActor: ANONYMOUS\nMétodo HTTP y ruta: GET {{baseUrl}}/api/venues/active\nAutorización: Ninguna (Público)\nDatos necesarios: Variables de URL\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 200 OK\nForma del JSON esperado: Arreglo JSON de objetos VenueResponse\nCampos relevantes que deben inspeccionarse: code, name, city, capacity, active\nVerificaciones de negocio o seguridad: Confirmar que al menos figure el venue VEN-SMR-01 con active=true\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-CONN-002] Verificar catálogo de Artistas activos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/artists/active",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "artists", "active"]
+            },
+            "description": "ID: TC-CONN-002\nObjetivo: Comprobar que el catálogo de artistas devuelve registros activos de la migración V2\nPrecondiciones: Migración Flyway V2 aplicada\nActor: ANONYMOUS\nMétodo HTTP y ruta: GET {{baseUrl}}/api/artists/active\nAutorización: Ninguna (Público)\nDatos necesarios: Variables de URL\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 200 OK\nForma del JSON esperado: Arreglo JSON de objetos ArtistResponse\nCampos relevantes que deben inspeccionarse: id, stageName, active\nVerificaciones de negocio o seguridad: Verificar presencia de Solar Beat, Neon Waves y que todos tengan active=true\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "01 Venues (2 rutas)",
+      "description": "Pruebas de las 2 rutas de venues: GET /api/venues/{code} y GET /api/venues/active.",
+      "item": [
+        {
+          "name": "[TC-VEN-001] Consultar venue activo por código",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/venues/{{venueActiveCode}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "venues", "{{venueActiveCode}}"]
+            },
+            "description": "ID: TC-VEN-001\nObjetivo: Consultar un venue específico existente utilizando su código único\nPrecondiciones: Fixture de venue VEN-SMR-01 presente en la base de datos\nActor: ANONYMOUS\nMétodo HTTP y ruta: GET {{baseUrl}}/api/venues/{{venueActiveCode}}\nAutorización: Ninguna (Público)\nDatos necesarios: Variable {{venueActiveCode}}\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 200 OK\nForma del JSON esperado: Objeto VenueResponse: { id, code, name, city, capacity, active }\nCampos relevantes que deben inspeccionarse: code='VEN-SMR-01', active=true, capacity=500\nVerificaciones de negocio o seguridad: Confirmar que la capacidad y ciudad corresponden exactamente al fixture\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-VEN-002] Listar todos los venues activos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/venues/active",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "venues", "active"]
+            },
+            "description": "ID: TC-VEN-002\nObjetivo: Obtener el listado completo de recintos activos para programación de eventos\nPrecondiciones: Al menos un venue con active=true en la base de datos\nActor: ANONYMOUS\nMétodo HTTP y ruta: GET {{baseUrl}}/api/venues/active\nAutorización: Ninguna (Público)\nDatos necesarios: Ninguno\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 200 OK\nForma del JSON esperado: Arreglo de objetos VenueResponse\nCampos relevantes que deben inspeccionarse: active en cada elemento\nVerificaciones de negocio o seguridad: Ningún venue inactivo (ej. VEN-INA-99) debe figurar en este listado\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-VEN-003] Consultar venue por código inexistente",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/venues/VEN-NONEXISTENT-999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "venues", "VEN-NONEXISTENT-999"]
+            },
+            "description": "ID: TC-VEN-003\nObjetivo: Verificar el tratamiento de error 404 al consultar un código de venue no existente\nPrecondiciones: El código VEN-NONEXISTENT-999 no existe en la base de datos\nActor: ANONYMOUS\nMétodo HTTP y ruta: GET {{baseUrl}}/api/venues/VEN-NONEXISTENT-999\nAutorización: Ninguna (Público)\nDatos necesarios: Path variable inexistente\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 404 Not Found\nForma del JSON esperado: Objeto ErrorResponse: { timestamp, status: 404, error: 'Not Found', message, details }\nCampos relevantes que deben inspeccionarse: status=404, error='Not Found', message con detalle de venue no encontrado\nVerificaciones de negocio o seguridad: Verificar contrato uniforme de ErrorResponse sin filtración de stack trace\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02 Artists (3 rutas)",
+      "description": "Pruebas de las 3 rutas de artistas: GET /api/artists/{id}, GET /api/artists/by-stage-name y GET /api/artists/active.",
+      "item": [
+        {
+          "name": "[TC-ART-001] Consultar artista por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/artists/{{artistId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "artists", "{{artistId}}"]
+            },
+            "description": "ID: TC-ART-001\nObjetivo: Recuperar la información pública de un artista mediante su ID autonumérico\nPrecondiciones: Artista con ID 1 insertado por la migración Flyway V2\nActor: ANONYMOUS\nMétodo HTTP y ruta: GET {{baseUrl}}/api/artists/{{artistId}}\nAutorización: Ninguna (Público)\nDatos necesarios: Variable {{artistId}}\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 200 OK\nForma del JSON esperado: Objeto ArtistResponse: { id, stageName, active }\nCampos relevantes que deben inspeccionarse: id=1, stageName='Solar Beat', active=true\nVerificaciones de negocio o seguridad: El nombre artístico debe coincidir con el registro histórico de Flyway\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-ART-002] Consultar artista por nombre artístico (stageName)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/artists/by-stage-name?stageName={{artistStageName}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "artists", "by-stage-name"],
+              "query": [
+                {
+                  "key": "stageName",
+                  "value": "{{artistStageName}}"
+                }
+              ]
+            },
+            "description": "ID: TC-ART-002\nObjetivo: Recuperar un artista a través de su nombre artístico único por query parameter\nPrecondiciones: Artista 'Solar Beat' presente en la base de datos\nActor: ANONYMOUS\nMétodo HTTP y ruta: GET {{baseUrl}}/api/artists/by-stage-name?stageName={{artistStageName}}\nAutorización: Ninguna (Público)\nDatos necesarios: Query param stageName\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 200 OK\nForma del JSON esperado: Objeto ArtistResponse: { id, stageName, active }\nCampos relevantes que deben inspeccionarse: stageName='Solar Beat', active=true\nVerificaciones de negocio o seguridad: Comprobar que la búsqueda por query parameter resuelve exactamente el mismo artista que por ID\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-ART-003] Listar todos los artistas activos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/artists/active",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "artists", "active"]
+            },
+            "description": "ID: TC-ART-003\nObjetivo: Listar el conjunto completo de artistas marcados como activos\nPrecondiciones: Artistas activos presentes en la base de datos\nActor: ANONYMOUS\nMétodo HTTP y ruta: GET {{baseUrl}}/api/artists/active\nAutorización: Ninguna (Público)\nDatos necesarios: Ninguno\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 200 OK\nForma del JSON esperado: Arreglo de objetos ArtistResponse\nCampos relevantes que deben inspeccionarse: active=true en todos los elementos del arreglo\nVerificaciones de negocio o seguridad: Artistas inactivos (ej. 'Silencioso Inactivo') no deben figurar en la respuesta\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-ART-004] Consultar artista por ID inexistente",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/artists/99999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "artists", "99999"]
+            },
+            "description": "ID: TC-ART-004\nObjetivo: Comprobar respuesta 404 ante solicitud de ID de artista inexistente\nPrecondiciones: ID 99999 no existe en la base de datos\nActor: ANONYMOUS\nMétodo HTTP y ruta: GET {{baseUrl}}/api/artists/99999\nAutorización: Ninguna (Público)\nDatos necesarios: Path variable con ID inexistente\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 404 Not Found\nForma del JSON esperado: Objeto ErrorResponse con status 404\nCampos relevantes que deben inspeccionarse: status=404, message indicando 'Artist not found with id: 99999'\nVerificaciones de negocio o seguridad: Estructura estándar de ErrorResponse sin exposición de base de datos\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-ART-005] Consultar artista por stageName inexistente",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/artists/by-stage-name?stageName=ArtistaInexistenteXYZ",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "artists", "by-stage-name"],
+              "query": [
+                {
+                  "key": "stageName",
+                  "value": "ArtistaInexistenteXYZ"
+                }
+              ]
+            },
+            "description": "ID: TC-ART-005\nObjetivo: Comprobar respuesta 404 ante nombre artístico inexistente\nPrecondiciones: Nombre 'ArtistaInexistenteXYZ' no existe\nActor: ANONYMOUS\nMétodo HTTP y ruta: GET {{baseUrl}}/api/artists/by-stage-name?stageName=ArtistaInexistenteXYZ\nAutorización: Ninguna (Público)\nDatos necesarios: Query param stageName inexistente\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 404 Not Found\nForma del JSON esperado: Objeto ErrorResponse con status 404\nCampos relevantes que deben inspeccionarse: status=404, message indicando artista no encontrado\nVerificaciones de negocio o seguridad: Mensaje claro y seguro\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "03 Auth / usuarios (registro, login, me)",
+      "description": "Pruebas de registro público (/api/users) y endpoints de autenticación (/api/auth/login, /api/auth/me).\n\nBLOQUEO TÉCNICO: En la versión actual del repositorio, POST /api/users está implementado (Fase 3), mientras que POST /api/auth/login y GET /api/auth/me corresponden a la Fase 4 y no están implementados en el código. Se incluyen para cobertura de contrato y se marcan como BLOCKED en la bitácora.",
+      "item": [
+        {
+          "name": "[TC-AUTH-001] Registrar usuario USER_A (válido)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{userAUsername}}\",\n  \"email\": \"{{userAEmail}}\",\n  \"firstName\": \"Andrea\",\n  \"lastName\": \"Pruebas\",\n  \"phone\": \"+573001234567\",\n  \"city\": \"Santa Marta\",\n  \"birthDate\": \"1998-05-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            },
+            "description": "ID: TC-AUTH-001\nObjetivo: Registrar un nuevo usuario estándar USER_A mediante el endpoint público de usuarios\nPrecondiciones: Username y email de USER_A no deben existir previamente en la base de datos\nActor: ANONYMOUS\nMétodo HTTP y ruta: POST {{baseUrl}}/api/users\nAutorización: Ninguna (Público)\nDatos necesarios: JSON con username, email, firstName, lastName, phone, city, birthDate\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 201 Created\nForma del JSON esperado: Objeto UserResponse: { id, username, email, active, firstName, lastName, phone, city, birthDate }\nCampos relevantes que deben inspeccionarse: id generado, username='{{userAUsername}}', email='{{userAEmail}}', active=true\nVerificaciones de negocio o seguridad: No debe exponer campos password ni passwordHash. El usuario queda creado con perfil en la misma transacción.\nConsulta posterior necesaria para comprobar persistencia: GET {{baseUrl}}/api/users/by-email?email={{userAEmail}}\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-AUTH-002] Registrar usuario USER_B (válido)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{userBUsername}}\",\n  \"email\": \"{{userBEmail}}\",\n  \"firstName\": \"Bernardo\",\n  \"lastName\": \"Pruebas\",\n  \"phone\": \"+573007654321\",\n  \"city\": \"Bogota\",\n  \"birthDate\": \"1995-08-20\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            },
+            "description": "ID: TC-AUTH-002\nObjetivo: Registrar un segundo usuario independiente USER_B para pruebas de autorización e IDOR\nPrecondiciones: Username y email de USER_B no existen en la base de datos\nActor: ANONYMOUS\nMétodo HTTP y ruta: POST {{baseUrl}}/api/users\nAutorización: Ninguna (Público)\nDatos necesarios: JSON con datos de registro de USER_B\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 201 Created\nForma del JSON esperado: Objeto UserResponse con datos de Bernardo\nCampos relevantes que deben inspeccionarse: id generado, username='{{userBUsername}}', email='{{userBEmail}}', active=true\nVerificaciones de negocio o seguridad: Verificar independencia de identidad y unicidad de registros\nConsulta posterior necesaria para comprobar persistencia: GET {{baseUrl}}/api/users/by-email?email={{userBEmail}}\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-AUTH-003] Iniciar sesión con username de USER_A (Login)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{userAUsername}}\",\n  \"password\": \"{{userAPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "ID: TC-AUTH-003\nObjetivo: Autenticar al usuario USER_A y obtener un JWT Bearer válido\nPrecondiciones: Capa de Seguridad Fase 4 implementada y USER_A registrado con credenciales\nActor: ANONYMOUS\nMétodo HTTP y ruta: POST {{baseUrl}}/api/auth/login\nAutorización: Ninguna (Público)\nDatos necesarios: JSON { identifier, password }\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 200 OK (o BLOCKED por ausencia de Fase 4 en el backend actual)\nForma del JSON esperado: Objeto AuthResponse: { accessToken: '<JWT>', tokenType: 'Bearer', expiresIn: 900 }\nCampos relevantes que deben inspeccionarse: accessToken no vacío, tokenType='Bearer', expiresIn=900\nVerificaciones de negocio o seguridad: Copiar manualmente el accessToken a la variable userAToken en Postman\nConsulta posterior necesaria para comprobar persistencia: GET {{baseUrl}}/api/auth/me usando {{userAToken}}\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-AUTH-004] Iniciar sesión con email de USER_A (Login)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{userAEmail}}\",\n  \"password\": \"{{userAPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "ID: TC-AUTH-004\nObjetivo: Autenticar mediante correo electrónico alternativo al username\nPrecondiciones: Capa de Seguridad Fase 4 que admita login por email\nActor: ANONYMOUS\nMétodo HTTP y ruta: POST {{baseUrl}}/api/auth/login\nAutorización: Ninguna (Público)\nDatos necesarios: JSON con identifier y password\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 200 OK (o BLOCKED)\nForma del JSON esperado: Objeto AuthResponse con JWT\nCampos relevantes que deben inspeccionarse: accessToken, tokenType, expiresIn\nVerificaciones de negocio o seguridad: Identificación correcta del mismo usuario\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-AUTH-005] Iniciar sesión con credenciales de STAFF",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{staffIdentifier}}\",\n  \"password\": \"{{staffPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "ID: TC-AUTH-005\nObjetivo: Autenticar al operador STAFF y obtener su token de rol operativo\nPrecondiciones: Cuenta STAFF preaprovisionada en la base de datos (Fase 4)\nActor: ANONYMOUS\nMétodo HTTP y ruta: POST {{baseUrl}}/api/auth/login\nAutorización: Ninguna (Público)\nDatos necesarios: JSON con credenciales de STAFF\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 200 OK (o BLOCKED)\nForma del JSON esperado: Objeto AuthResponse con JWT\nCampos relevantes que deben inspeccionarse: accessToken (copiar manualmente a staffToken en Postman)\nVerificaciones de negocio o seguridad: Token de actor STAFF preparado para operaciones de control de tickets\nConsulta posterior necesaria para comprobar persistencia: GET {{baseUrl}}/api/auth/me\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-AUTH-006] Iniciar sesión con credenciales de ADMIN",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{adminIdentifier}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "ID: TC-AUTH-006\nObjetivo: Autenticar al administrador ADMIN y obtener su token de máximo privilegio\nPrecondiciones: Cuenta ADMIN preaprovisionada en la base de datos (Fase 4)\nActor: ANONYMOUS\nMétodo HTTP y ruta: POST {{baseUrl}}/api/auth/login\nAutorización: Ninguna (Público)\nDatos necesarios: JSON con credenciales de ADMIN\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 200 OK (o BLOCKED)\nForma del JSON esperado: Objeto AuthResponse con JWT\nCampos relevantes que deben inspeccionarse: accessToken (copiar manualmente a adminToken en Postman)\nVerificaciones de negocio o seguridad: Token de actor ADMIN preparado para creación y publicación de eventos\nConsulta posterior necesaria para comprobar persistencia: GET {{baseUrl}}/api/auth/me\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-AUTH-007] Consultar identidad propia de USER_A (/api/auth/me)",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "me"]
+            },
+            "description": "ID: TC-AUTH-007\nObjetivo: Validar la consulta del principal autenticado sin exponer secretos\nPrecondiciones: Token userAToken copiado en el ambiente (Fase 4)\nActor: USER_A\nMétodo HTTP y ruta: GET {{baseUrl}}/api/auth/me\nAutorización: Bearer {{userAToken}}\nDatos necesarios: Bearer token\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 200 OK (o BLOCKED)\nForma del JSON esperado: Objeto UserResponse o MeResponse con identidad de USER_A\nCampos relevantes que deben inspeccionarse: username, email, roles/authorities, sin contraseñas ni hashes\nVerificaciones de negocio o seguridad: Verificar que el principal corresponde a USER_A y no tiene privilegios STAFF ni ADMIN\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-AUTH-008] Consultar identidad propia de ADMIN (/api/auth/me)",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "me"]
+            },
+            "description": "ID: TC-AUTH-008\nObjetivo: Validar la consulta del principal administrador\nPrecondiciones: Token adminToken copiado en el ambiente (Fase 4)\nActor: ADMIN\nMétodo HTTP y ruta: GET {{baseUrl}}/api/auth/me\nAutorización: Bearer {{adminToken}}\nDatos necesarios: Bearer token\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 200 OK (o BLOCKED)\nForma del JSON esperado: Objeto de identidad con rol ADMIN\nCampos relevantes que deben inspeccionarse: roles conteniendo ROLE_ADMIN o ADMIN\nVerificaciones de negocio o seguridad: Privilegios efectivos de administración comprobados\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-AUTH-009] Login con contraseña incorrecta",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{userAUsername}}\",\n  \"password\": \"PasswordTotalmenteErroneo123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "ID: TC-AUTH-009\nObjetivo: Comprobar rechazo genérico 401 ante credenciales inválidas\nPrecondiciones: Capa de Seguridad Fase 4 implementada\nActor: ANONYMOUS\nMétodo HTTP y ruta: POST {{baseUrl}}/api/auth/login\nAutorización: Ninguna (Público)\nDatos necesarios: Credenciales erróneas\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 401 Unauthorized (o BLOCKED)\nForma del JSON esperado: Objeto ErrorResponse con status 401\nCampos relevantes que deben inspeccionarse: status=401, mensaje genérico de error de credenciales\nVerificaciones de negocio o seguridad: No debe revelar si el usuario existe o no (anti-enumeración de usuarios)\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-AUTH-010] Login con identificador inexistente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"usuario_fantasma_no_existe_999\",\n  \"password\": \"CualquierPassword123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "ID: TC-AUTH-010\nObjetivo: Comprobar que un usuario no existente recibe exactamente el mismo 401 genérico\nPrecondiciones: Capa de Seguridad Fase 4 implementada\nActor: ANONYMOUS\nMétodo HTTP y ruta: POST {{baseUrl}}/api/auth/login\nAutorización: Ninguna (Público)\nDatos necesarios: Identificador ficticio\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 401 Unauthorized (o BLOCKED)\nForma del JSON esperado: Objeto ErrorResponse con status 401\nCampos relevantes que deben inspeccionarse: status=401, error='Unauthorized'\nVerificaciones de negocio o seguridad: Mismo mensaje e idéntico comportamiento que contraseña incorrecta\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "04 Usuarios / consulta y propiedad (2 rutas)",
+      "description": "Pruebas de consulta de usuarios: GET /api/users/by-email y GET /api/users/by-username.",
+      "item": [
+        {
+          "name": "[TC-USR-001] Consultar usuario propio USER_A por email",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/by-email?email={{userAEmail}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "by-email"],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "{{userAEmail}}"
+                }
+              ]
+            },
+            "description": "ID: TC-USR-001\nObjetivo: Consultar la información de un usuario registrado utilizando su correo electrónico\nPrecondiciones: Usuario USER_A registrado previamente\nActor: USER_A (o ANONYMOUS en Fase 3)\nMétodo HTTP y ruta: GET {{baseUrl}}/api/users/by-email?email={{userAEmail}}\nAutorización: Bearer {{userAToken}}\nDatos necesarios: Query param email={{userAEmail}}\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 200 OK\nForma del JSON esperado: Objeto UserResponse: { id, username, email, active, firstName, lastName, phone, city, birthDate }\nCampos relevantes que deben inspeccionarse: email='{{userAEmail}}', username='{{userAUsername}}', firstName='Andrea'\nVerificaciones de negocio o seguridad: Verificar integridad del perfil y que el email se busca ignorando mayúsculas/minúsculas\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-USR-002] Consultar usuario propio USER_A por username",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/by-username?username={{userAUsername}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "by-username"],
+              "query": [
+                {
+                  "key": "username",
+                  "value": "{{userAUsername}}"
+                }
+              ]
+            },
+            "description": "ID: TC-USR-002\nObjetivo: Consultar la información de un usuario registrado utilizando su nombre de usuario\nPrecondiciones: Usuario USER_A registrado previamente\nActor: USER_A (o ANONYMOUS en Fase 3)\nMétodo HTTP y ruta: GET {{baseUrl}}/api/users/by-username?username={{userAUsername}}\nAutorización: Bearer {{userAToken}}\nDatos necesarios: Query param username={{userAUsername}}\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 200 OK\nForma del JSON esperado: Objeto UserResponse correspondiente a USER_A\nCampos relevantes que deben inspeccionarse: username='{{userAUsername}}', email='{{userAEmail}}'\nVerificaciones de negocio o seguridad: Coincidencia exacta con los datos suministrados en el registro\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-USR-003] Consultar usuario como ADMIN por email",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/by-email?email={{userAEmail}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "by-email"],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "{{userAEmail}}"
+                }
+              ]
+            },
+            "description": "ID: TC-USR-003\nObjetivo: Verificar que un administrador tiene permisos para consultar usuarios por email\nPrecondiciones: Usuario registrado y credenciales de ADMIN disponibles\nActor: ADMIN\nMétodo HTTP y ruta: GET {{baseUrl}}/api/users/by-email?email={{userAEmail}}\nAutorización: Bearer {{adminToken}}\nDatos necesarios: Query param email\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 200 OK\nForma del JSON esperado: Objeto UserResponse\nCampos relevantes que deben inspeccionarse: email='{{userAEmail}}'\nVerificaciones de negocio o seguridad: ADMIN puede inspeccionar cuentas del sistema\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-USR-004] Consultar usuario por email inexistente",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/by-email?email=inexistente.e2e@example.test",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "by-email"],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "inexistente.e2e@example.test"
+                }
+              ]
+            },
+            "description": "ID: TC-USR-004\nObjetivo: Verificar respuesta 404 al consultar un correo no registrado\nPrecondiciones: El correo inexistente@example.test no existe en la base de datos\nActor: ANONYMOUS\nMétodo HTTP y ruta: GET {{baseUrl}}/api/users/by-email?email=inexistente.e2e@example.test\nAutorización: Ninguna (Público)\nDatos necesarios: Query param email inexistente\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 404 Not Found\nForma del JSON esperado: Objeto ErrorResponse con status 404\nCampos relevantes que deben inspeccionarse: status=404, message='User not found with email: inexistente.e2e@example.test'\nVerificaciones de negocio o seguridad: Mensaje contractual emitido por GlobalExceptionHandler\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-USR-005] Consultar usuario por username inexistente",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/by-username?username=usuario_fantasma_999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "by-username"],
+              "query": [
+                {
+                  "key": "username",
+                  "value": "usuario_fantasma_999"
+                }
+              ]
+            },
+            "description": "ID: TC-USR-005\nObjetivo: Verificar respuesta 404 al consultar un username no registrado\nPrecondiciones: El username usuario_fantasma_999 no existe\nActor: ANONYMOUS\nMétodo HTTP y ruta: GET {{baseUrl}}/api/users/by-username?username=usuario_fantasma_999\nAutorización: Ninguna (Público)\nDatos necesarios: Query param username inexistente\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 404 Not Found\nForma del JSON esperado: Objeto ErrorResponse con status 404\nCampos relevantes que deben inspeccionarse: status=404, message='User not found with username: usuario_fantasma_999'\nVerificaciones de negocio o seguridad: Mensaje contractual emitido por GlobalExceptionHandler\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "05 Events / administración y visibilidad (6 rutas)",
+      "description": "Pruebas de las 6 rutas de eventos: POST /api/events, GET /api/events/{eventCode}, GET /api/events/published, PATCH /api/events/{eventCode}/publish, POST /api/events/{eventCode}/artists/{artistId}, GET /api/events/by-artist.",
+      "item": [
+        {
+          "name": "[TC-EVT-001] Crear evento en estado borrador (ADMIN)",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventCode\": \"{{newEventCode}}\",\n  \"name\": \"PulsePass Rock & Electro Fest {{runId}}\",\n  \"description\": \"Festival de prueba manual end-to-end con artistas invitados\",\n  \"category\": \"MUSIC\",\n  \"eventDate\": \"2027-11-20T20:00:00\",\n  \"minimumAge\": 18,\n  \"venueCode\": \"{{venueActiveCode}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events"]
+            },
+            "description": "ID: TC-EVT-001\nObjetivo: Crear un nuevo evento en el sistema con estado inicial DRAFT\nPrecondiciones: Venue VEN-SMR-01 activo; fecha del evento en el futuro; código nuevo único\nActor: ADMIN (o ANONYMOUS en Fase 3)\nMétodo HTTP y ruta: POST {{baseUrl}}/api/events\nAutorización: Bearer {{adminToken}}\nDatos necesarios: JSON con CreateEventRequest\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 201 Created\nForma del JSON esperado: Objeto EventResponse: { id, eventCode, name, category, status: 'DRAFT', eventDate, minimumAge, venueCode, venueName, artists: [] }\nCampos relevantes que deben inspeccionarse: eventCode='{{newEventCode}}', status='DRAFT', venueCode='{{venueActiveCode}}', artists vacío\nVerificaciones de negocio o seguridad: Regla BR-EVENT-005: El estado inicial debe ser estrictamente DRAFT. Guardar newEventCode para pasos posteriores.\nConsulta posterior necesaria para comprobar persistencia: GET {{baseUrl}}/api/events/{{newEventCode}}\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-EVT-002] Consultar evento por código",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{publishedEventCode}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events", "{{publishedEventCode}}"]
+            },
+            "description": "ID: TC-EVT-002\nObjetivo: Recuperar la información completa de un evento mediante su código de negocio\nPrecondiciones: Evento publicado EVT-PUB-01 presente en la base de datos\nActor: ANONYMOUS\nMétodo HTTP y ruta: GET {{baseUrl}}/api/events/{{publishedEventCode}}\nAutorización: Ninguna (Público)\nDatos necesarios: Path variable {{publishedEventCode}}\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 200 OK\nForma del JSON esperado: Objeto EventResponse: { id, eventCode, name, category, status, eventDate, minimumAge, venueCode, venueName, artists }\nCampos relevantes que deben inspeccionarse: eventCode='{{publishedEventCode}}', status='PUBLISHED', artists conteniendo 'Solar Beat'\nVerificaciones de negocio o seguridad: Verificar resolución de nombres de venue y conjunto de artistas asociados\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-EVT-003] Listar eventos publicados",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/published",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events", "published"]
+            },
+            "description": "ID: TC-EVT-003\nObjetivo: Obtener la cartelera pública de eventos con estado PUBLISHED\nPrecondiciones: Al menos un evento en estado PUBLISHED (ej. EVT-PUB-01)\nActor: ANONYMOUS\nMétodo HTTP y ruta: GET {{baseUrl}}/api/events/published\nAutorización: Ninguna (Público)\nDatos necesarios: Ninguno\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 200 OK\nForma del JSON esperado: Arreglo de objetos EventSummaryResponse: [ { id, eventCode, name, category, status, eventDate, venueName } ]\nCampos relevantes que deben inspeccionarse: status='PUBLISHED' en todos los elementos. Orden ascendente por eventDate.\nVerificaciones de negocio o seguridad: Los eventos en estado DRAFT (ej. EVT-DRAFT-01) NUNCA deben figurar en este listado\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-EVT-004] Publicar evento en borrador (ADMIN)",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{eventToPublishCode}}/publish",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events", "{{eventToPublishCode}}", "publish"]
+            },
+            "description": "ID: TC-EVT-004\nObjetivo: Transicionar un evento desde estado DRAFT a PUBLISHED mediante PATCH\nPrecondiciones: Evento EVT-TOPUB-01 existe en estado DRAFT con fecha futura y venue activo\nActor: ADMIN (o ANONYMOUS en Fase 3)\nMétodo HTTP y ruta: PATCH {{baseUrl}}/api/events/{{eventToPublishCode}}/publish\nAutorización: Bearer {{adminToken}}\nDatos necesarios: Path variable {{eventToPublishCode}}\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 200 OK\nForma del JSON esperado: Objeto EventResponse con status='PUBLISHED'\nCampos relevantes que deben inspeccionarse: eventCode='{{eventToPublishCode}}', status='PUBLISHED'\nVerificaciones de negocio o seguridad: Regla BR-EVENT-007 y BR-EVENT-009: Transición exitosa de estado de borrador a publicado.\nConsulta posterior necesaria para comprobar persistencia: GET {{baseUrl}}/api/events/published para confirmar que ahora aparece en cartelera\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-EVT-005] Asociar artista a evento (ADMIN)",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{newEventCode}}/artists/{{artistId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events", "{{newEventCode}}", "artists", "{{artistId}}"]
+            },
+            "description": "ID: TC-EVT-005\nObjetivo: Vincular un artista existente al evento mediante su identificador numérico\nPrecondiciones: Evento creado en TC-EVT-001 y artista con ID 1 existente y activo\nActor: ADMIN (o ANONYMOUS en Fase 3)\nMétodo HTTP y ruta: POST {{baseUrl}}/api/events/{{newEventCode}}/artists/{{artistId}}\nAutorización: Bearer {{adminToken}}\nDatos necesarios: Path variables eventCode y artistId\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 200 OK\nForma del JSON esperado: Objeto EventResponse con el conjunto 'artists' actualizado\nCampos relevantes que deben inspeccionarse: artists contiene 'Solar Beat'\nVerificaciones de negocio o seguridad: Verificar persistencia de la relación en la tabla intermedia event_artists\nConsulta posterior necesaria para comprobar persistencia: GET {{baseUrl}}/api/events/{{newEventCode}}\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-EVT-006] Buscar eventos por nombre de artista",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/by-artist?stageName={{artistStageName}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events", "by-artist"],
+              "query": [
+                {
+                  "key": "stageName",
+                  "value": "{{artistStageName}}"
+                }
+              ]
+            },
+            "description": "ID: TC-EVT-006\nObjetivo: Consultar eventos en los que participa un artista determinado mediante su nombre artístico\nPrecondiciones: Artista 'Solar Beat' asociado al evento EVT-PUB-01\nActor: ANONYMOUS\nMétodo HTTP y ruta: GET {{baseUrl}}/api/events/by-artist?stageName={{artistStageName}}\nAutorización: Ninguna (Público)\nDatos necesarios: Query param stageName\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 200 OK\nForma del JSON esperado: Arreglo de objetos EventSummaryResponse\nCampos relevantes que deben inspeccionarse: eventCode contiene 'EVT-PUB-01'\nVerificaciones de negocio o seguridad: La búsqueda debe resolver los eventos relacionados con el artista indicado\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-EVT-007] Consultar evento por código inexistente",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/EVT-NONEXISTENT-999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events", "EVT-NONEXISTENT-999"]
+            },
+            "description": "ID: TC-EVT-007\nObjetivo: Verificar respuesta 404 al consultar un código de evento no existente\nPrecondiciones: El código EVT-NONEXISTENT-999 no existe en la base de datos\nActor: ANONYMOUS\nMétodo HTTP y ruta: GET {{baseUrl}}/api/events/EVT-NONEXISTENT-999\nAutorización: Ninguna (Público)\nDatos necesarios: Path variable inexistente\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 404 Not Found\nForma del JSON esperado: Objeto ErrorResponse con status 404\nCampos relevantes que deben inspeccionarse: status=404, message='Event not found: EVT-NONEXISTENT-999'\nVerificaciones de negocio o seguridad: Manejo correcto de excepción ResourceNotFoundException\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "06 Tickets / compra, consulta y ciclo de vida (6 rutas)",
+      "description": "Pruebas de las 6 rutas de tickets: POST /api/tickets, GET /api/tickets/{ticketCode}, GET /api/tickets/by-user, GET /api/events/{eventCode}/tickets/paid, PATCH /api/tickets/{ticketCode}/cancel, PATCH /api/tickets/{ticketCode}/use.",
+      "item": [
+        {
+          "name": "[TC-TKT-001] Comprar ticket T1 para cancelación (USER_A)",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userEmail\": \"{{userAEmail}}\",\n  \"eventCode\": \"{{publishedEventCode}}\",\n  \"type\": \"GENERAL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tickets"]
+            },
+            "description": "ID: TC-TKT-001\nObjetivo: Comprar una entrada GENERAL para el evento publicado EVT-PUB-01 como USER_A\nPrecondiciones: Usuario USER_A registrado y activo; evento EVT-PUB-01 en estado PUBLISHED con aforo disponible\nActor: USER_A\nMétodo HTTP y ruta: POST {{baseUrl}}/api/tickets\nAutorización: Bearer {{userAToken}}\nDatos necesarios: JSON { userEmail, eventCode, type }\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 201 Created\nForma del JSON esperado: Objeto TicketResponse: { id, ticketCode, type: 'GENERAL', price: 50.00, status: 'PAID', purchaseDate, userEmail, eventCode, eventName }\nCampos relevantes que deben inspeccionarse: ticketCode iniciando en 'TCK-', status='PAID', price=50.00, userEmail='{{userAEmail}}'\nVerificaciones de negocio o seguridad: Regla BR-TICKET-008 y BR-TICKET-009: El ticket se crea directamente con estado PAID y precio calculado $50.00. Copiar el ticketCode retornado a la variable ticketCancelableCode.\nConsulta posterior necesaria para comprobar persistencia: GET {{baseUrl}}/api/tickets/{{ticketCancelableCode}}\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-TKT-002] Comprar ticket T2 para uso por STAFF (USER_A)",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userEmail\": \"{{userAEmail}}\",\n  \"eventCode\": \"{{publishedEventCode}}\",\n  \"type\": \"VIP\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tickets"]
+            },
+            "description": "ID: TC-TKT-002\nObjetivo: Comprar una segunda entrada VIP para pruebas de marcado de uso por STAFF\nPrecondiciones: Usuario USER_A y evento publicado con capacidad\nActor: USER_A\nMétodo HTTP y ruta: POST {{baseUrl}}/api/tickets\nAutorización: Bearer {{userAToken}}\nDatos necesarios: JSON { userEmail, eventCode, type: 'VIP' }\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 201 Created\nForma del JSON esperado: Objeto TicketResponse con type='VIP' y price=100.00\nCampos relevantes que deben inspeccionarse: ticketCode generado, status='PAID', price=100.00\nVerificaciones de negocio o seguridad: Ticket independiente reservado exclusivamente para la transición de uso. Copiar ticketCode a ticketUsableCode.\nConsulta posterior necesaria para comprobar persistencia: GET {{baseUrl}}/api/tickets/{{ticketUsableCode}}\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-TKT-003] Consultar ticket por código",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/{{ticketCancelableCode}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tickets", "{{ticketCancelableCode}}"]
+            },
+            "description": "ID: TC-TKT-003\nObjetivo: Recuperar un ticket específico mediante su código único de negocio\nPrecondiciones: Ticket existente en ticketCancelableCode\nActor: USER_A (Propietario)\nMétodo HTTP y ruta: GET {{baseUrl}}/api/tickets/{{ticketCancelableCode}}\nAutorización: Bearer {{userAToken}}\nDatos necesarios: Path variable ticketCode\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 200 OK\nForma del JSON esperado: Objeto TicketResponse\nCampos relevantes que deben inspeccionarse: ticketCode='{{ticketCancelableCode}}', userEmail='{{userAEmail}}', status\nVerificaciones de negocio o seguridad: Verificar coherencia de datos con la respuesta obtenida en la compra\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-TKT-004] Listar tickets por email del usuario",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/by-user?email={{userAEmail}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tickets", "by-user"],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "{{userAEmail}}"
+                }
+              ]
+            },
+            "description": "ID: TC-TKT-004\nObjetivo: Listar todas las entradas adquiridas por un usuario determinado\nPrecondiciones: USER_A ha comprado al menos un ticket\nActor: USER_A (Propietario)\nMétodo HTTP y ruta: GET {{baseUrl}}/api/tickets/by-user?email={{userAEmail}}\nAutorización: Bearer {{userAToken}}\nDatos necesarios: Query param email\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 200 OK\nForma del JSON esperado: Arreglo de objetos TicketResponse ordenados por purchaseDate desc\nCampos relevantes que deben inspeccionarse: Todos los tickets pertenecen a userEmail='{{userAEmail}}'\nVerificaciones de negocio o seguridad: Comprobar que figuran tanto el ticket cancelable como el ticket usable\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-TKT-005] Consultar tickets pagados de un evento (STAFF/ADMIN)",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staffToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{publishedEventCode}}/tickets/paid",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events", "{{publishedEventCode}}", "tickets", "paid"]
+            },
+            "description": "ID: TC-TKT-005\nObjetivo: Consultar la lista operativa de tickets pagados de un evento para control de acceso\nPrecondiciones: Evento EVT-PUB-01 con tickets en estado PAID\nActor: STAFF (o ANONYMOUS en Fase 3)\nMétodo HTTP y ruta: GET {{baseUrl}}/api/events/{{publishedEventCode}}/tickets/paid\nAutorización: Bearer {{staffToken}}\nDatos necesarios: Path variable eventCode\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 200 OK\nForma del JSON esperado: Arreglo de objetos TicketResponse con status='PAID'\nCampos relevantes que deben inspeccionarse: status='PAID' en todos los tickets retornados\nVerificaciones de negocio o seguridad: Tickets cancelados o usados no deben figurar en esta consulta operativa\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-TKT-006] Cancelar ticket elegible (Propietario USER_A)",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/{{ticketCancelableCode}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tickets", "{{ticketCancelableCode}}", "cancel"]
+            },
+            "description": "ID: TC-TKT-006\nObjetivo: Cancelar un ticket propio en estado PAID antes de la fecha del evento\nPrecondiciones: Ticket ticketCancelableCode en estado PAID\nActor: USER_A (Propietario)\nMétodo HTTP y ruta: PATCH {{baseUrl}}/api/tickets/{{ticketCancelableCode}}/cancel\nAutorización: Bearer {{userAToken}}\nDatos necesarios: Path variable ticketCode\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 200 OK\nForma del JSON esperado: Objeto TicketResponse con status='CANCELLED'\nCampos relevantes que deben inspeccionarse: ticketCode='{{ticketCancelableCode}}', status='CANCELLED'\nVerificaciones de negocio o seguridad: Regla BR-TICKET-010: Transición exitosa a CANCELLED. El ticket queda inhabilitado.\nConsulta posterior necesaria para comprobar persistencia: GET {{baseUrl}}/api/tickets/{{ticketCancelableCode}} para reconfirmar persistencia\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-TKT-007] Reconsultar ticket cancelado (Verificación de persistencia)",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/{{ticketCancelableCode}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tickets", "{{ticketCancelableCode}}"]
+            },
+            "description": "ID: TC-TKT-007\nObjetivo: Comprobar mediante lectura posterior que el estado CANCELLED fue persistido\nPrecondiciones: TC-TKT-006 ejecutado exitosamente\nActor: USER_A\nMétodo HTTP y ruta: GET {{baseUrl}}/api/tickets/{{ticketCancelableCode}}\nAutorización: Bearer {{userAToken}}\nDatos necesarios: Path variable ticketCode\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 200 OK\nForma del JSON esperado: Objeto TicketResponse con status='CANCELLED'\nCampos relevantes que deben inspeccionarse: status='CANCELLED'\nVerificaciones de negocio o seguridad: Confirmar que no se produjo reversión del estado en base de datos\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-TKT-008] Marcar ticket como usado (STAFF)",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staffToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/{{ticketUsableCode}}/use",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tickets", "{{ticketUsableCode}}", "use"]
+            },
+            "description": "ID: TC-TKT-008\nObjetivo: Validar el ingreso de un asistente marcando su ticket PAID como USED\nPrecondiciones: Ticket independiente ticketUsableCode en estado PAID\nActor: STAFF (Operador de acceso)\nMétodo HTTP y ruta: PATCH {{baseUrl}}/api/tickets/{{ticketUsableCode}}/use\nAutorización: Bearer {{staffToken}}\nDatos necesarios: Path variable ticketCode\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 200 OK\nForma del JSON esperado: Objeto TicketResponse con status='USED'\nCampos relevantes que deben inspeccionarse: ticketCode='{{ticketUsableCode}}', status='USED'\nVerificaciones de negocio o seguridad: Regla BR-TICKET-013: Transición exitosa a USED realizada por personal autorizado.\nConsulta posterior necesaria para comprobar persistencia: GET {{baseUrl}}/api/tickets/{{ticketUsableCode}}\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-TKT-009] Reconsultar ticket usado (Verificación de persistencia)",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/{{ticketUsableCode}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tickets", "{{ticketUsableCode}}"]
+            },
+            "description": "ID: TC-TKT-009\nObjetivo: Comprobar mediante lectura posterior que el estado USED fue persistido\nPrecondiciones: TC-TKT-008 ejecutado exitosamente\nActor: USER_A\nMétodo HTTP y ruta: GET {{baseUrl}}/api/tickets/{{ticketUsableCode}}\nAutorización: Bearer {{userAToken}}\nDatos necesarios: Path variable ticketCode\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 200 OK\nForma del JSON esperado: Objeto TicketResponse con status='USED'\nCampos relevantes que deben inspeccionarse: status='USED'\nVerificaciones de negocio o seguridad: Confirmar estado persistido\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-TKT-010] Consultar ticket por código inexistente",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/TCK-NONEXISTENT-999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tickets", "TCK-NONEXISTENT-999"]
+            },
+            "description": "ID: TC-TKT-010\nObjetivo: Verificar respuesta 404 al consultar un código de ticket no registrado\nPrecondiciones: Código TCK-NONEXISTENT-999 no existe\nActor: ANONYMOUS\nMétodo HTTP y ruta: GET {{baseUrl}}/api/tickets/TCK-NONEXISTENT-999\nAutorización: Ninguna (Público)\nDatos necesarios: Path variable inexistente\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 404 Not Found\nForma del JSON esperado: Objeto ErrorResponse con status 404\nCampos relevantes que deben inspeccionarse: status=404, message='Ticket not found with code: TCK-NONEXISTENT-999'\nVerificaciones de negocio o seguridad: Manejo uniforme de errores\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "07 Seguridad / escenarios negativos",
+      "description": "Pruebas de seguridad, autorización, control de roles, prevención de IDOR y validación de tokens JWT.\n\nNOTA: En la versión actual del repositorio, la Capa de Seguridad (Fase 4) está pendiente de integración. Los escenarios que requieren verificación de roles y JWT se documentan con su resultado contractual esperado (401/403) y se registran como BLOCKED en la bitácora frente al backend actual de Fase 3.",
+      "item": [
+        {
+          "name": "[TC-SEC-001] Crear evento sin autenticación (Anónimo)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventCode\": \"EVT-NOAUTH-01\",\n  \"name\": \"Intento no autenticado\",\n  \"category\": \"MUSIC\",\n  \"eventDate\": \"2027-11-20T20:00:00\",\n  \"minimumAge\": 18,\n  \"venueCode\": \"{{venueActiveCode}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events"]
+            },
+            "description": "ID: TC-SEC-001\nObjetivo: Verificar que un visitante anónimo sin header Authorization no puede crear eventos\nPrecondiciones: Capa de Seguridad Fase 4 activa\nActor: ANONYMOUS\nMétodo HTTP y ruta: POST {{baseUrl}}/api/events\nAutorización: Ninguna (Público)\nDatos necesarios: JSON con CreateEventRequest\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 401 Unauthorized (o BLOCKED)\nForma del JSON esperado: Objeto ErrorResponse con status 401\nCampos relevantes que deben inspeccionarse: status=401, error='Unauthorized'\nVerificaciones de negocio o seguridad: Verificar con GET {{baseUrl}}/api/events/EVT-NOAUTH-01 que el evento NO fue creado (ausencia de mutación)\nConsulta posterior necesaria para comprobar persistencia: GET {{baseUrl}}/api/events/EVT-NOAUTH-01 (debe dar 404)\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-SEC-002] Crear evento con rol no autorizado (USER_A)",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventCode\": \"EVT-FORBIDDEN-01\",\n  \"name\": \"Intento por usuario regular\",\n  \"category\": \"MUSIC\",\n  \"eventDate\": \"2027-11-20T20:00:00\",\n  \"minimumAge\": 18,\n  \"venueCode\": \"{{venueActiveCode}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events"]
+            },
+            "description": "ID: TC-SEC-002\nObjetivo: Verificar que un usuario regular con rol USER no puede crear eventos\nPrecondiciones: Token userAToken válido correspondiente al rol USER (Fase 4)\nActor: USER_A\nMétodo HTTP y ruta: POST {{baseUrl}}/api/events\nAutorización: Bearer {{userAToken}}\nDatos necesarios: JSON con CreateEventRequest\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 403 Forbidden (o BLOCKED)\nForma del JSON esperado: Objeto ErrorResponse con status 403\nCampos relevantes que deben inspeccionarse: status=403, error='Forbidden'\nVerificaciones de negocio o seguridad: Verificar ausencia de mutación: ningún evento nuevo creado\nConsulta posterior necesaria para comprobar persistencia: GET {{baseUrl}}/api/events/EVT-FORBIDDEN-01 (debe retornar 404)\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-SEC-003] Publicar evento con rol USER_A",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{draftEventCode}}/publish",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events", "{{draftEventCode}}", "publish"]
+            },
+            "description": "ID: TC-SEC-003\nObjetivo: Verificar que un usuario regular no puede publicar eventos\nPrecondiciones: Evento draftEventCode existe en estado DRAFT; token userAToken (Fase 4)\nActor: USER_A\nMétodo HTTP y ruta: PATCH {{baseUrl}}/api/events/{{draftEventCode}}/publish\nAutorización: Bearer {{userAToken}}\nDatos necesarios: Path variable draftEventCode\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 403 Forbidden (o BLOCKED)\nForma del JSON esperado: Objeto ErrorResponse con status 403\nCampos relevantes que deben inspeccionarse: status=403\nVerificaciones de negocio o seguridad: Verificar mediante GET posterior que el evento sigue en estado DRAFT (no mutó)\nConsulta posterior necesaria para comprobar persistencia: GET {{baseUrl}}/api/events/{{draftEventCode}} como ADMIN\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-SEC-004] Publicar evento con rol STAFF",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staffToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{draftEventCode}}/publish",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events", "{{draftEventCode}}", "publish"]
+            },
+            "description": "ID: TC-SEC-004\nObjetivo: Verificar que el rol STAFF no tiene privilegios de publicación de eventos\nPrecondiciones: Token staffToken de operador; evento en borrador (Fase 4)\nActor: STAFF\nMétodo HTTP y ruta: PATCH {{baseUrl}}/api/events/{{draftEventCode}}/publish\nAutorización: Bearer {{staffToken}}\nDatos necesarios: Path variable draftEventCode\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 403 Forbidden (o BLOCKED)\nForma del JSON esperado: Objeto ErrorResponse con status 403\nCampos relevantes que deben inspeccionarse: status=403\nVerificaciones de negocio o seguridad: Solo ADMIN puede publicar eventos. El evento debe conservar su estado DRAFT.\nConsulta posterior necesaria para comprobar persistencia: GET {{baseUrl}}/api/events/{{draftEventCode}} como ADMIN\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-SEC-005] Asociar artista con rol USER_A",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{draftEventCode}}/artists/{{artistId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events", "{{draftEventCode}}", "artists", "{{artistId}}"]
+            },
+            "description": "ID: TC-SEC-005\nObjetivo: Verificar que un usuario regular no puede asociar artistas a eventos\nPrecondiciones: Token userAToken; evento existente (Fase 4)\nActor: USER_A\nMétodo HTTP y ruta: POST {{baseUrl}}/api/events/{{draftEventCode}}/artists/{{artistId}}\nAutorización: Bearer {{userAToken}}\nDatos necesarios: Path variables eventCode y artistId\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 403 Forbidden (o BLOCKED)\nForma del JSON esperado: Objeto ErrorResponse con status 403\nCampos relevantes que deben inspeccionarse: status=403\nVerificaciones de negocio o seguridad: No se modifica la lista de artistas del evento\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-SEC-006] Consultar evento en borrador como visitante anónimo",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{draftEventCode}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events", "{{draftEventCode}}"]
+            },
+            "description": "ID: TC-SEC-006\nObjetivo: Verificar que un visitante anónimo no puede acceder a eventos no publicados\nPrecondiciones: Evento draftEventCode en estado DRAFT en la base de datos\nActor: ANONYMOUS\nMétodo HTTP y ruta: GET {{baseUrl}}/api/events/{{draftEventCode}}\nAutorización: Ninguna (Público)\nDatos necesarios: Path variable draftEventCode\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 403 Forbidden o 404 Not Found (política anti-enumeración)\nForma del JSON esperado: Objeto ErrorResponse sin exposición de datos del borrador\nCampos relevantes que deben inspeccionarse: status coincide con la política establecida; no retorna datos del evento\nVerificaciones de negocio o seguridad: Protección de información confidencial previa al lanzamiento\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-SEC-007] Consultar usuario A por email siendo USER_B (IDOR)",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userBToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/by-email?email={{userAEmail}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "by-email"],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "{{userAEmail}}"
+                }
+              ]
+            },
+            "description": "ID: TC-SEC-007\nObjetivo: Verificar prevención de acceso horizontal a datos privados de otro usuario por email\nPrecondiciones: USER_A y USER_B registrados; token userBToken activo (Fase 4)\nActor: USER_B\nMétodo HTTP y ruta: GET {{baseUrl}}/api/users/by-email?email={{userAEmail}}\nAutorización: Bearer {{userBToken}}\nDatos necesarios: Query param email={{userAEmail}}\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: {{expectedForeignResourceStatus}} (403 Forbidden o 404 Not Found)\nForma del JSON esperado: Objeto ErrorResponse sin información personal de Andrea\nCampos relevantes que deben inspeccionarse: status=403 o 404, ningún campo del perfil de Andrea expuesto\nVerificaciones de negocio o seguridad: Principio de propiedad (ownership): un usuario solo accede a sus propios datos\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-SEC-008] Consultar usuario A por username siendo USER_B (IDOR)",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userBToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/by-username?username={{userAUsername}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "by-username"],
+              "query": [
+                {
+                  "key": "username",
+                  "value": "{{userAUsername}}"
+                }
+              ]
+            },
+            "description": "ID: TC-SEC-008\nObjetivo: Verificar prevención de acceso horizontal a datos privados de otro usuario por username\nPrecondiciones: USER_A y USER_B registrados; token userBToken activo (Fase 4)\nActor: USER_B\nMétodo HTTP y ruta: GET {{baseUrl}}/api/users/by-username?username={{userAUsername}}\nAutorización: Bearer {{userBToken}}\nDatos necesarios: Query param username={{userAUsername}}\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: {{expectedForeignResourceStatus}} (403 Forbidden o 404 Not Found)\nForma del JSON esperado: Objeto ErrorResponse\nCampos relevantes que deben inspeccionarse: status=403 o 404\nVerificaciones de negocio o seguridad: Protección estricta de propiedad de cuenta\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-SEC-009] Comprar ticket asignándolo indebidamente a otro usuario",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userEmail\": \"{{userBEmail}}\",\n  \"eventCode\": \"{{publishedEventCode}}\",\n  \"type\": \"GENERAL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tickets"]
+            },
+            "description": "ID: TC-SEC-009\nObjetivo: Verificar que USER_A no puede crear un ticket a nombre del email de USER_B\nPrecondiciones: Token userAToken; cuerpo con userEmail de USER_B (Fase 4)\nActor: USER_A\nMétodo HTTP y ruta: POST {{baseUrl}}/api/tickets\nAutorización: Bearer {{userAToken}}\nDatos necesarios: JSON con userEmail='{{userBEmail}}'\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 403 Forbidden o 409 Conflict (o BLOCKED)\nForma del JSON esperado: Objeto ErrorResponse\nCampos relevantes que deben inspeccionarse: status y mensaje de rechazo de asignación ajena\nVerificaciones de negocio o seguridad: Verificar con GET tickets de USER_B que no se generó ninguna compra espuria\nConsulta posterior necesaria para comprobar persistencia: GET {{baseUrl}}/api/tickets/by-user?email={{userBEmail}}\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-SEC-010] Leer ticket de USER_A siendo USER_B (IDOR)",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userBToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/{{ticketCancelableCode}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tickets", "{{ticketCancelableCode}}"]
+            },
+            "description": "ID: TC-SEC-010\nObjetivo: Verificar que USER_B no puede consultar un ticket perteneciente a USER_A\nPrecondiciones: Ticket ticketCancelableCode pertenece a USER_A; token userBToken (Fase 4)\nActor: USER_B\nMétodo HTTP y ruta: GET {{baseUrl}}/api/tickets/{{ticketCancelableCode}}\nAutorización: Bearer {{userBToken}}\nDatos necesarios: Path variable ticketCode\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: {{expectedForeignResourceStatus}} (403 Forbidden o 404 Not Found)\nForma del JSON esperado: Objeto ErrorResponse sin datos del ticket\nCampos relevantes que deben inspeccionarse: status=403 o 404\nVerificaciones de negocio o seguridad: Aislamiento horizontal de recursos entre usuarios\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-SEC-011] Listar tickets de USER_A siendo USER_B (IDOR)",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userBToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/by-user?email={{userAEmail}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tickets", "by-user"],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "{{userAEmail}}"
+                }
+              ]
+            },
+            "description": "ID: TC-SEC-011\nObjetivo: Verificar que USER_B no puede listar los tickets de USER_A\nPrecondiciones: USER_A tiene tickets; token userBToken (Fase 4)\nActor: USER_B\nMétodo HTTP y ruta: GET {{baseUrl}}/api/tickets/by-user?email={{userAEmail}}\nAutorización: Bearer {{userBToken}}\nDatos necesarios: Query param email={{userAEmail}}\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: {{expectedForeignResourceStatus}} (403 Forbidden o 404 Not Found)\nForma del JSON esperado: Objeto ErrorResponse\nCampos relevantes que deben inspeccionarse: status=403 o 404\nVerificaciones de negocio o seguridad: Ausencia total de listado ajeno\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-SEC-012] Cancelar ticket de USER_A siendo USER_B (IDOR)",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userBToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/{{ticketCancelableCode}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tickets", "{{ticketCancelableCode}}", "cancel"]
+            },
+            "description": "ID: TC-SEC-012\nObjetivo: Verificar que USER_B no puede cancelar un ticket perteneciente a USER_A\nPrecondiciones: Ticket de USER_A en estado PAID; token userBToken (Fase 4)\nActor: USER_B\nMétodo HTTP y ruta: PATCH {{baseUrl}}/api/tickets/{{ticketCancelableCode}}/cancel\nAutorización: Bearer {{userBToken}}\nDatos necesarios: Path variable ticketCode\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: {{expectedForeignResourceStatus}} (403 Forbidden o 404 Not Found)\nForma del JSON esperado: Objeto ErrorResponse\nCampos relevantes que deben inspeccionarse: status=403 o 404\nVerificaciones de negocio o seguridad: Verificar con USER_A que el ticket conserva su estado PAID intacto (sin mutación)\nConsulta posterior necesaria para comprobar persistencia: GET {{baseUrl}}/api/tickets/{{ticketCancelableCode}} como USER_A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-SEC-013] Marcar uso de ticket siendo USER_A",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/{{ticketUsableCode}}/use",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tickets", "{{ticketUsableCode}}", "use"]
+            },
+            "description": "ID: TC-SEC-013\nObjetivo: Verificar que un usuario regular no puede marcar tickets como usados (reservado a STAFF)\nPrecondiciones: Ticket ticketUsableCode en estado PAID; token userAToken (Fase 4)\nActor: USER_A\nMétodo HTTP y ruta: PATCH {{baseUrl}}/api/tickets/{{ticketUsableCode}}/use\nAutorización: Bearer {{userAToken}}\nDatos necesarios: Path variable ticketCode\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 403 Forbidden (o BLOCKED)\nForma del JSON esperado: Objeto ErrorResponse con status 403\nCampos relevantes que deben inspeccionarse: status=403\nVerificaciones de negocio o seguridad: Verificar que el ticket sigue en estado PAID sin haber sido marcado como usado\nConsulta posterior necesaria para comprobar persistencia: GET {{baseUrl}}/api/tickets/{{ticketUsableCode}} como STAFF\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-SEC-014] Consultar tickets pagados de un evento siendo USER_A",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{publishedEventCode}}/tickets/paid",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events", "{{publishedEventCode}}", "tickets", "paid"]
+            },
+            "description": "ID: TC-SEC-014\nObjetivo: Verificar que un usuario regular no puede consultar la lista operativa de tickets pagados\nPrecondiciones: Token userAToken (Fase 4)\nActor: USER_A\nMétodo HTTP y ruta: GET {{baseUrl}}/api/events/{{publishedEventCode}}/tickets/paid\nAutorización: Bearer {{userAToken}}\nDatos necesarios: Path variable eventCode\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 403 Forbidden (o BLOCKED)\nForma del JSON esperado: Objeto ErrorResponse con status 403\nCampos relevantes que deben inspeccionarse: status=403\nVerificaciones de negocio o seguridad: La lista de asistentes solo está disponible para STAFF y ADMIN\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-SEC-015] Token de autorización malformado",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "TokenTotalmenteInvalidoSinEstructuraJWT",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "me"]
+            },
+            "description": "ID: TC-SEC-015\nObjetivo: Comprobar rechazo 401 al enviar una cabecera Bearer con estructura inválida\nPrecondiciones: Capa de Seguridad Fase 4 activa\nActor: ANONYMOUS\nMétodo HTTP y ruta: GET {{baseUrl}}/api/auth/me\nAutorización: Bearer TokenTotalmenteInvalidoSinEstructuraJWT\nDatos necesarios: Token malformado\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 401 Unauthorized (o BLOCKED)\nForma del JSON esperado: Objeto ErrorResponse con status 401\nCampos relevantes que deben inspeccionarse: status=401, error='Unauthorized'\nVerificaciones de negocio o seguridad: Filtro de seguridad intercepta la petición antes de ingresar a controladores\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-SEC-016] Token JWT alterado (firma rota)",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAToken}}X",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "me"]
+            },
+            "description": "ID: TC-SEC-016\nObjetivo: Comprobar rechazo 401 al modificar un carácter de un token previamente válido\nPrecondiciones: Token userAToken disponible al que se le altera el último carácter\nActor: ANONYMOUS\nMétodo HTTP y ruta: GET {{baseUrl}}/api/auth/me\nAutorización: Bearer {{userAToken}}X\nDatos necesarios: Token con firma rota\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 401 Unauthorized (o BLOCKED)\nForma del JSON esperado: Objeto ErrorResponse con status 401\nCampos relevantes que deben inspeccionarse: status=401\nVerificaciones de negocio o seguridad: Rechazo criptográfico inmediato por discrepancia de firma JJWT\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-SEC-017] Token entregado por query string en lugar de Header",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me?token={{userAToken}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "me"],
+              "query": [
+                {
+                  "key": "token",
+                  "value": "{{userAToken}}"
+                }
+              ]
+            },
+            "description": "ID: TC-SEC-017\nObjetivo: Verificar que el servidor rechaza tokens enviados como parámetros de consulta\nPrecondiciones: Ruta protegida y token en query parameter\nActor: ANONYMOUS\nMétodo HTTP y ruta: GET {{baseUrl}}/api/auth/me?token={{userAToken}}\nAutorización: Ninguna en headers\nDatos necesarios: Query param token={{userAToken}}\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 401 Unauthorized (o BLOCKED)\nForma del JSON esperado: Objeto ErrorResponse con status 401\nCampos relevantes que deben inspeccionarse: status=401\nVerificaciones de negocio o seguridad: La autenticación solo es válida mediante header Authorization: Bearer\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-SEC-018] Registro intentando inyectar role=ADMIN",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"escalado_intento_{{runId}}\",\n  \"email\": \"escalado_{{runId}}@example.test\",\n  \"firstName\": \"Atacante\",\n  \"lastName\": \"Privilegios\",\n  \"phone\": \"+573009999999\",\n  \"city\": \"Remoto\",\n  \"birthDate\": \"1990-01-01\",\n  \"role\": \"ADMIN\",\n  \"roles\": [\"ADMIN\", \"ROLE_ADMIN\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            },
+            "description": "ID: TC-SEC-018\nObjetivo: Verificar que un atacante no puede elevar privilegios inyectando campos de rol en el registro\nPrecondiciones: Endpoint de registro público POST /api/users\nActor: ANONYMOUS\nMétodo HTTP y ruta: POST {{baseUrl}}/api/users\nAutorización: Ninguna (Público)\nDatos necesarios: JSON con campos intrusivos de rol\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 201 Created (o 400 Bad Request si el DTO rechaza propiedades desconocidas)\nForma del JSON esperado: UserResponse sin privilegios de administración concedidos\nCampos relevantes que deben inspeccionarse: active=true, sin campo de rol expuesto\nVerificaciones de negocio o seguridad: Comprobar que si el usuario se crea, solo obtiene rol USER y no puede invocar endpoints de ADMIN\nConsulta posterior necesaria para comprobar persistencia: POST {{baseUrl}}/api/events con credenciales de este usuario (debe retornar 403)\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "08 Validaciones y errores HTTP",
+      "description": "Pruebas de validación de esquemas JSON, restricciones de DTO, valores de enums, conflictos de unicidad y transiciones no permitidas en la máquina de estados.",
+      "item": [
+        {
+          "name": "[TC-HTTP-001] Registro usuario - Cuerpo JSON vacío (campos obligatorios ausentes)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            },
+            "description": "ID: TC-HTTP-001\nObjetivo: Comprobar respuesta 400 con mapa de detalles ante ausencia de campos obligatorios\nPrecondiciones: Cuerpo de solicitud vacío {}\nActor: ANONYMOUS\nMétodo HTTP y ruta: POST {{baseUrl}}/api/users\nAutorización: Ninguna (Público)\nDatos necesarios: {}\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 400 Bad Request\nForma del JSON esperado: Objeto ErrorResponse con mapa de detalles de validación\nCampos relevantes que deben inspeccionarse: status=400, error='Bad Request', message='Validation failed', details con username, email, firstName, lastName, birthDate\nVerificaciones de negocio o seguridad: Contrato uniforme emitido por handleMethodArgumentNotValid\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-HTTP-002] Registro usuario - Formato de email inválido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"usuario_bad_email_{{runId}}\",\n  \"email\": \"correo-invalido-sin-arroba\",\n  \"firstName\": \"Email\",\n  \"lastName\": \"Invalido\",\n  \"phone\": \"+573001112233\",\n  \"city\": \"Cali\",\n  \"birthDate\": \"1995-03-20\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            },
+            "description": "ID: TC-HTTP-002\nObjetivo: Comprobar rechazo 400 cuando el email no cumple con el estándar RFC\nPrecondiciones: Email con formato incorrecto 'correo-invalido-sin-arroba'\nActor: ANONYMOUS\nMétodo HTTP y ruta: POST {{baseUrl}}/api/users\nAutorización: Ninguna (Público)\nDatos necesarios: JSON con email inválido\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 400 Bad Request\nForma del JSON esperado: Objeto ErrorResponse con details.email='Email must be valid'\nCampos relevantes que deben inspeccionarse: details.email\nVerificaciones de negocio o seguridad: Validación declarativa @Email en RegisterUserRequest\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-HTTP-003] Registro usuario - Fecha de nacimiento en el futuro",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"usuario_futuro_{{runId}}\",\n  \"email\": \"futuro_{{runId}}@example.test\",\n  \"firstName\": \"Viajero\",\n  \"lastName\": \"Tiempo\",\n  \"phone\": \"+573001112233\",\n  \"city\": \"Medellin\",\n  \"birthDate\": \"2099-01-01\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            },
+            "description": "ID: TC-HTTP-003\nObjetivo: Comprobar rechazo por regla de negocio ante fecha de nacimiento futura\nPrecondiciones: birthDate en el año 2099\nActor: ANONYMOUS\nMétodo HTTP y ruta: POST {{baseUrl}}/api/users\nAutorización: Ninguna (Público)\nDatos necesarios: JSON con birthDate='2099-01-01'\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 409 Conflict\nForma del JSON esperado: Objeto ErrorResponse: { status: 409, error: 'Conflict', message: 'Birth date cannot be in the future' }\nCampos relevantes que deben inspeccionarse: status=409, message='Birth date cannot be in the future'\nVerificaciones de negocio o seguridad: Regla BR-USER-005: Fecha de nacimiento no puede ser futura\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-HTTP-004] Registro usuario duplicado - Username repetido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{userAUsername}}\",\n  \"email\": \"otro_email_{{runId}}@example.test\",\n  \"firstName\": \"Duplicado\",\n  \"lastName\": \"Username\",\n  \"phone\": \"+573008889900\",\n  \"city\": \"Barranquilla\",\n  \"birthDate\": \"1992-06-10\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            },
+            "description": "ID: TC-HTTP-004\nObjetivo: Comprobar respuesta 409 Conflict ante intento de duplicar un username existente\nPrecondiciones: USER_A registrado previamente con username='{{userAUsername}}'\nActor: ANONYMOUS\nMétodo HTTP y ruta: POST {{baseUrl}}/api/users\nAutorización: Ninguna (Público)\nDatos necesarios: JSON con username='{{userAUsername}}'\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 409 Conflict\nForma del JSON esperado: Objeto ErrorResponse con status 409\nCampos relevantes que deben inspeccionarse: status=409, message='Username already exists: {{userAUsername}}'\nVerificaciones de negocio o seguridad: Regla BR-USER-001: username único\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-HTTP-005] Registro usuario duplicado - Email repetido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"otro_username_{{runId}}\",\n  \"email\": \"{{userAEmail}}\",\n  \"firstName\": \"Duplicado\",\n  \"lastName\": \"Email\",\n  \"phone\": \"+573008889900\",\n  \"city\": \"Cartagena\",\n  \"birthDate\": \"1994-09-12\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            },
+            "description": "ID: TC-HTTP-005\nObjetivo: Comprobar respuesta 409 Conflict ante intento de registrar un email ya existente\nPrecondiciones: USER_A registrado previamente con email='{{userAEmail}}'\nActor: ANONYMOUS\nMétodo HTTP y ruta: POST {{baseUrl}}/api/users\nAutorización: Ninguna (Público)\nDatos necesarios: JSON con email='{{userAEmail}}'\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 409 Conflict\nForma del JSON esperado: Objeto ErrorResponse con status 409\nCampos relevantes que deben inspeccionarse: status=409, message='Email already exists: {{userAEmail}}'\nVerificaciones de negocio o seguridad: Regla BR-USER-002: email único independientemente de mayúsculas/minúsculas\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-HTTP-006] Petición con sintaxis JSON rota (Malformed JSON)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"eventCode\": \"EVT-BROKEN\", \"name\": ",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events"]
+            },
+            "description": "ID: TC-HTTP-006\nObjetivo: Comprobar manejo 400 ante cuerpo con sintaxis JSON inválida\nPrecondiciones: Cuerpo con llaves sin cerrar y sintaxis rota\nActor: ANONYMOUS\nMétodo HTTP y ruta: POST {{baseUrl}}/api/events\nAutorización: Ninguna (Público)\nDatos necesarios: JSON incompleto con sintaxis rota\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 400 Bad Request\nForma del JSON esperado: Objeto ErrorResponse: { status: 400, error: 'Bad Request', message: 'Malformed JSON request' }\nCampos relevantes que deben inspeccionarse: status=400, message='Malformed JSON request'\nVerificaciones de negocio o seguridad: Capturado limpiamente por handleHttpMessageNotReadable sin filtrar stack trace\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-HTTP-007] Crear evento con categoría enum inválida",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventCode\": \"EVT-BADCAT-01\",\n  \"name\": \"Evento con Categoria Invalida\",\n  \"category\": \"CATEGORIA_INVENTADA\",\n  \"eventDate\": \"2027-11-20T20:00:00\",\n  \"minimumAge\": 18,\n  \"venueCode\": \"{{venueActiveCode}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events"]
+            },
+            "description": "ID: TC-HTTP-007\nObjetivo: Comprobar rechazo 400 al enviar un valor de categoría fuera del enum EventCategory\nPrecondiciones: Categoría 'CATEGORIA_INVENTADA' no pertenece a MUSIC, SPORTS, TECHNOLOGY, EDUCATION, CULTURE, ENTERTAINMENT\nActor: ADMIN\nMétodo HTTP y ruta: POST {{baseUrl}}/api/events\nAutorización: Bearer {{adminToken}}\nDatos necesarios: JSON con category inválida\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 400 Bad Request\nForma del JSON esperado: Objeto ErrorResponse con status 400\nCampos relevantes que deben inspeccionarse: status=400, message='Malformed JSON request' o error de deserialización de enum\nVerificaciones de negocio o seguridad: Rechazo de deserialización en capa HTTP\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-HTTP-008] Crear evento con fecha en el pasado",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventCode\": \"EVT-PAST-01\",\n  \"name\": \"Evento en el Pasado\",\n  \"category\": \"MUSIC\",\n  \"eventDate\": \"2020-01-01T20:00:00\",\n  \"minimumAge\": 18,\n  \"venueCode\": \"{{venueActiveCode}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events"]
+            },
+            "description": "ID: TC-HTTP-008\nObjetivo: Comprobar rechazo 409 cuando la fecha del evento no es futura\nPrecondiciones: eventDate fijada en el año 2020\nActor: ADMIN\nMétodo HTTP y ruta: POST {{baseUrl}}/api/events\nAutorización: Bearer {{adminToken}}\nDatos necesarios: JSON con eventDate pasada\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 409 Conflict\nForma del JSON esperado: Objeto ErrorResponse con status 409\nCampos relevantes que deben inspeccionarse: status=409, message='Event date must be in the future'\nVerificaciones de negocio o seguridad: Regla BR-EVENT-004: Fecha válida (futura)\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-HTTP-009] Crear evento con venue inexistente",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventCode\": \"EVT-BADVEN-01\",\n  \"name\": \"Evento con Venue Inexistente\",\n  \"category\": \"SPORTS\",\n  \"eventDate\": \"2027-11-20T20:00:00\",\n  \"minimumAge\": 0,\n  \"venueCode\": \"VEN-NO-EXISTE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events"]
+            },
+            "description": "ID: TC-HTTP-009\nObjetivo: Comprobar rechazo 404 cuando el código de venue no existe\nPrecondiciones: venueCode 'VEN-NO-EXISTE' no registrado en la base de datos\nActor: ADMIN\nMétodo HTTP y ruta: POST {{baseUrl}}/api/events\nAutorización: Bearer {{adminToken}}\nDatos necesarios: JSON con venueCode='VEN-NO-EXISTE'\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 404 Not Found\nForma del JSON esperado: Objeto ErrorResponse con status 404\nCampos relevantes que deben inspeccionarse: status=404, message='Venue not found: VEN-NO-EXISTE'\nVerificaciones de negocio o seguridad: Regla BR-EVENT-002: Venue obligatorio y existente\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-HTTP-010] Crear evento en venue inactivo",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventCode\": \"EVT-INAVEN-01\",\n  \"name\": \"Evento en Venue Inactivo\",\n  \"category\": \"CULTURE\",\n  \"eventDate\": \"2027-11-20T20:00:00\",\n  \"minimumAge\": 0,\n  \"venueCode\": \"{{venueInactiveCode}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events"]
+            },
+            "description": "ID: TC-HTTP-010\nObjetivo: Comprobar rechazo 409 cuando el venue referenciado está inactivo\nPrecondiciones: Venue VEN-INA-99 con active=false en la base de datos\nActor: ADMIN\nMétodo HTTP y ruta: POST {{baseUrl}}/api/events\nAutorización: Bearer {{adminToken}}\nDatos necesarios: JSON con venueCode inactivo\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 409 Conflict\nForma del JSON esperado: Objeto ErrorResponse con status 409\nCampos relevantes que deben inspeccionarse: status=409, message='Cannot create event in an inactive venue: {{venueInactiveCode}}'\nVerificaciones de negocio o seguridad: Regla BR-EVENT-003: Venue debe estar activo\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-HTTP-011] Crear evento duplicado con mismo eventCode",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventCode\": \"{{publishedEventCode}}\",\n  \"name\": \"Intento Duplicado\",\n  \"category\": \"MUSIC\",\n  \"eventDate\": \"2027-11-20T20:00:00\",\n  \"minimumAge\": 18,\n  \"venueCode\": \"{{venueActiveCode}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events"]
+            },
+            "description": "ID: TC-HTTP-011\nObjetivo: Comprobar respuesta 409 Conflict al intentar crear un evento con un código ya registrado\nPrecondiciones: Evento con eventCode='{{publishedEventCode}}' ya existe\nActor: ADMIN\nMétodo HTTP y ruta: POST {{baseUrl}}/api/events\nAutorización: Bearer {{adminToken}}\nDatos necesarios: JSON con eventCode existente\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 409 Conflict\nForma del JSON esperado: Objeto ErrorResponse con status 409\nCampos relevantes que deben inspeccionarse: status=409, message='Event code already exists: {{publishedEventCode}}'\nVerificaciones de negocio o seguridad: Regla BR-EVENT-001: Código de evento único\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-HTTP-012] Publicar evento que no está en estado DRAFT",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{publishedEventCode}}/publish",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events", "{{publishedEventCode}}", "publish"]
+            },
+            "description": "ID: TC-HTTP-012\nObjetivo: Comprobar rechazo 409 al intentar publicar un evento que ya está en estado PUBLISHED\nPrecondiciones: Evento publishedEventCode en estado PUBLISHED\nActor: ADMIN\nMétodo HTTP y ruta: PATCH {{baseUrl}}/api/events/{{publishedEventCode}}/publish\nAutorización: Bearer {{adminToken}}\nDatos necesarios: Path variable eventCode ya publicado\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 409 Conflict\nForma del JSON esperado: Objeto ErrorResponse con status 409\nCampos relevantes que deben inspeccionarse: status=409, message indicando 'Only DRAFT events can be published. Current status: PUBLISHED'\nVerificaciones de negocio o seguridad: Regla BR-EVENT-007: Máquina de estados previene transiciones inválidas\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-HTTP-013] Asociar artista que ya está vinculado al evento",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{publishedEventCode}}/artists/{{artistId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events", "{{publishedEventCode}}", "artists", "{{artistId}}"]
+            },
+            "description": "ID: TC-HTTP-013\nObjetivo: Comprobar rechazo 409 al intentar asociar dos veces el mismo artista\nPrecondiciones: Evento EVT-PUB-01 ya tiene asociado al artista ID 1 (Solar Beat)\nActor: ADMIN\nMétodo HTTP y ruta: POST {{baseUrl}}/api/events/{{publishedEventCode}}/artists/{{artistId}}\nAutorización: Bearer {{adminToken}}\nDatos necesarios: Path variables eventCode y artistId ya asociados\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 409 Conflict\nForma del JSON esperado: Objeto ErrorResponse con status 409\nCampos relevantes que deben inspeccionarse: status=409, message='Artist is already associated with this event: Solar Beat'\nVerificaciones de negocio o seguridad: Regla BR-EVENT-010: No duplicar artistas en el mismo evento\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-HTTP-014] Comprar ticket para evento que no está publicado",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userEmail\": \"{{userAEmail}}\",\n  \"eventCode\": \"{{draftEventCode}}\",\n  \"type\": \"GENERAL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tickets"]
+            },
+            "description": "ID: TC-HTTP-014\nObjetivo: Comprobar rechazo 409 al intentar comprar una entrada para un evento en estado DRAFT\nPrecondiciones: Evento draftEventCode en estado DRAFT\nActor: USER_A\nMétodo HTTP y ruta: POST {{baseUrl}}/api/tickets\nAutorización: Bearer {{userAToken}}\nDatos necesarios: JSON con eventCode en borrador\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 409 Conflict\nForma del JSON esperado: Objeto ErrorResponse con status 409\nCampos relevantes que deben inspeccionarse: status=409, message='Tickets can only be purchased for PUBLISHED events. Current status: DRAFT'\nVerificaciones de negocio o seguridad: Regla BR-TICKET-004: Evento debe estar publicado para permitir venta\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-HTTP-015] Comprar ticket con tipo enum inválido",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userEmail\": \"{{userAEmail}}\",\n  \"eventCode\": \"{{publishedEventCode}}\",\n  \"type\": \"SUPER_VIP\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tickets"]
+            },
+            "description": "ID: TC-HTTP-015\nObjetivo: Comprobar rechazo 400 al suministrar un tipo de ticket fuera del enum TicketType\nPrecondiciones: Tipo 'SUPER_VIP' no existe (solo GENERAL, VIP, BACKSTAGE, STUDENT)\nActor: USER_A\nMétodo HTTP y ruta: POST {{baseUrl}}/api/tickets\nAutorización: Bearer {{userAToken}}\nDatos necesarios: JSON con type='SUPER_VIP'\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 400 Bad Request\nForma del JSON esperado: Objeto ErrorResponse con status 400\nCampos relevantes que deben inspeccionarse: status=400, message='Malformed JSON request'\nVerificaciones de negocio o seguridad: Validación estricta de valores enum\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-HTTP-016] Cancelar un ticket que ya está cancelado",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/{{ticketCancelableCode}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tickets", "{{ticketCancelableCode}}", "cancel"]
+            },
+            "description": "ID: TC-HTTP-016\nObjetivo: Comprobar rechazo 409 ante un segundo intento de cancelación sobre el mismo ticket\nPrecondiciones: Ticket ticketCancelableCode cancelado previamente en TC-TKT-006\nActor: USER_A\nMétodo HTTP y ruta: PATCH {{baseUrl}}/api/tickets/{{ticketCancelableCode}}/cancel\nAutorización: Bearer {{userAToken}}\nDatos necesarios: Path variable ticketCode cancelado\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 409 Conflict\nForma del JSON esperado: Objeto ErrorResponse con status 409\nCampos relevantes que deben inspeccionarse: status=409, message='Only PAID tickets can be cancelled. Current ticket status: CANCELLED'\nVerificaciones de negocio o seguridad: Regla BR-TICKET-010: No doble cancelación; máquina de estados consistente\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-HTTP-017] Marcar como usado un ticket que ya fue usado",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staffToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/{{ticketUsableCode}}/use",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tickets", "{{ticketUsableCode}}", "use"]
+            },
+            "description": "ID: TC-HTTP-017\nObjetivo: Comprobar rechazo 409 ante un segundo intento de marcado de uso\nPrecondiciones: Ticket ticketUsableCode marcado como USED previamente en TC-TKT-008\nActor: STAFF\nMétodo HTTP y ruta: PATCH {{baseUrl}}/api/tickets/{{ticketUsableCode}}/use\nAutorización: Bearer {{staffToken}}\nDatos necesarios: Path variable ticketCode ya usado\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 409 Conflict\nForma del JSON esperado: Objeto ErrorResponse con status 409\nCampos relevantes que deben inspeccionarse: status=409, message='Only PAID tickets can be marked as used. Current ticket status: USED'\nVerificaciones de negocio o seguridad: Regla BR-TICKET-013: Prevenir reutilización de entradas ya validadas\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-HTTP-018] Intentar marcar como usado un ticket cancelado",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staffToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/{{ticketCancelableCode}}/use",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tickets", "{{ticketCancelableCode}}", "use"]
+            },
+            "description": "ID: TC-HTTP-018\nObjetivo: Comprobar rechazo 409 al intentar validar el ingreso con una entrada cancelada\nPrecondiciones: Ticket ticketCancelableCode en estado CANCELLED\nActor: STAFF\nMétodo HTTP y ruta: PATCH {{baseUrl}}/api/tickets/{{ticketCancelableCode}}/use\nAutorización: Bearer {{staffToken}}\nDatos necesarios: Path variable ticketCode cancelado\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 409 Conflict\nForma del JSON esperado: Objeto ErrorResponse con status 409\nCampos relevantes que deben inspeccionarse: status=409, message='Only PAID tickets can be marked as used. Current ticket status: CANCELLED'\nVerificaciones de negocio o seguridad: Control de fraude en accesos\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "09 Flujos de negocio / secuencia recomendada",
+      "description": "Secuencia recomendada de ejecución de los cinco flujos principales A, B, C, D y E para validar el ciclo completo de vida del negocio de PulsePass conforme al capítulo 9 del PRD.",
+      "item": [
+        {
+          "name": "[TC-BIZ-001] Flujo A.1 - Consultar venues activos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/venues/active",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "venues", "active"]
+            },
+            "description": "ID: TC-BIZ-001\nObjetivo: Descubrir venues disponibles para eventos (Flujo A)\nPrecondiciones: Ambiente local configurado\nActor: ANONYMOUS\nMétodo HTTP y ruta: GET {{baseUrl}}/api/venues/active\nAutorización: Ninguna (Público)\nDatos necesarios: Ninguno\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 200 OK\nForma del JSON esperado: Lista de venues\nCampos relevantes que deben inspeccionarse: venueActiveCode\nVerificaciones de negocio o seguridad: Verificar disponibilidad de recintos\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-BIZ-002] Flujo A.2 - Consultar venue activo por código",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/venues/{{venueActiveCode}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "venues", "{{venueActiveCode}}"]
+            },
+            "description": "ID: TC-BIZ-002\nObjetivo: Verificar datos y aforo del venue seleccionado\nPrecondiciones: venueActiveCode conocido\nActor: ANONYMOUS\nMétodo HTTP y ruta: GET {{baseUrl}}/api/venues/{{venueActiveCode}}\nAutorización: Ninguna (Público)\nDatos necesarios: Path variable venueActiveCode\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 200 OK\nForma del JSON esperado: Objeto VenueResponse\nCampos relevantes que deben inspeccionarse: capacity, active\nVerificaciones de negocio o seguridad: Capacidad adecuada para eventos\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-BIZ-003] Flujo A.3 - Consultar cartelera pública de eventos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/published",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events", "published"]
+            },
+            "description": "ID: TC-BIZ-003\nObjetivo: Comprobar que solo los eventos publicados son visibles al público\nPrecondiciones: Eventos en base de datos\nActor: ANONYMOUS\nMétodo HTTP y ruta: GET {{baseUrl}}/api/events/published\nAutorización: Ninguna (Público)\nDatos necesarios: Ninguno\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 200 OK\nForma del JSON esperado: Arreglo de eventos publicados\nCampos relevantes que deben inspeccionarse: status='PUBLISHED'\nVerificaciones de negocio o seguridad: Ningún borrador visible\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-BIZ-004] Flujo A.4 - Consultar eventos por artista",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/by-artist?stageName={{artistStageName}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events", "by-artist"],
+              "query": [
+                {
+                  "key": "stageName",
+                  "value": "{{artistStageName}}"
+                }
+              ]
+            },
+            "description": "ID: TC-BIZ-004\nObjetivo: Comprobar búsqueda pública de eventos por artista invitado\nPrecondiciones: Artista Solar Beat asociado\nActor: ANONYMOUS\nMétodo HTTP y ruta: GET {{baseUrl}}/api/events/by-artist?stageName={{artistStageName}}\nAutorización: Ninguna (Público)\nDatos necesarios: Query param stageName\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 200 OK\nForma del JSON esperado: Lista de eventos del artista\nCampos relevantes que deben inspeccionarse: name, venueName\nVerificaciones de negocio o seguridad: Relación de catálogo pública verificada\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-BIZ-005] Flujo B.1 - Registro de USER_A",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{userAUsername}}\",\n  \"email\": \"{{userAEmail}}\",\n  \"firstName\": \"Andrea\",\n  \"lastName\": \"Pruebas\",\n  \"phone\": \"+573001234567\",\n  \"city\": \"Santa Marta\",\n  \"birthDate\": \"1998-05-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            },
+            "description": "ID: TC-BIZ-005\nObjetivo: Registrar cuenta de cliente principal para compras\nPrecondiciones: Datos de registro en variables de entorno\nActor: ANONYMOUS\nMétodo HTTP y ruta: POST {{baseUrl}}/api/users\nAutorización: Ninguna (Público)\nDatos necesarios: JSON de registro\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 201 Created\nForma del JSON esperado: UserResponse\nCampos relevantes que deben inspeccionarse: id, active=true\nVerificaciones de negocio o seguridad: Cliente listo para compras\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-BIZ-006] Flujo B.2 - Registro de USER_B",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{userBUsername}}\",\n  \"email\": \"{{userBEmail}}\",\n  \"firstName\": \"Bernardo\",\n  \"lastName\": \"Pruebas\",\n  \"phone\": \"+573007654321\",\n  \"city\": \"Bogota\",\n  \"birthDate\": \"1995-08-20\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            },
+            "description": "ID: TC-BIZ-006\nObjetivo: Registrar cuenta de segundo usuario independiente\nPrecondiciones: Datos de USER_B listos\nActor: ANONYMOUS\nMétodo HTTP y ruta: POST {{baseUrl}}/api/users\nAutorización: Ninguna (Público)\nDatos necesarios: JSON de registro\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 201 Created\nForma del JSON esperado: UserResponse\nCampos relevantes que deben inspeccionarse: id, active=true\nVerificaciones de negocio o seguridad: Segundo cliente registrado\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-BIZ-007] Flujo C.1 - ADMIN crea nuevo evento en borrador",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventCode\": \"{{newEventCode}}\",\n  \"name\": \"PulsePass Fest {{runId}}\",\n  \"description\": \"Evento de prueba de ciclo de vida completo\",\n  \"category\": \"MUSIC\",\n  \"eventDate\": \"2027-11-20T20:00:00\",\n  \"minimumAge\": 18,\n  \"venueCode\": \"{{venueActiveCode}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events"]
+            },
+            "description": "ID: TC-BIZ-007\nObjetivo: Crear evento de prueba en estado DRAFT\nPrecondiciones: Venue activo y fecha futura\nActor: ADMIN\nMétodo HTTP y ruta: POST {{baseUrl}}/api/events\nAutorización: Bearer {{adminToken}}\nDatos necesarios: JSON con CreateEventRequest\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 201 Created\nForma del JSON esperado: EventResponse con status DRAFT\nCampos relevantes que deben inspeccionarse: eventCode, status='DRAFT'\nVerificaciones de negocio o seguridad: Evento creado en borrador\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-BIZ-008] Flujo C.2 - ADMIN asocia artista al evento",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{newEventCode}}/artists/{{artistId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events", "{{newEventCode}}", "artists", "{{artistId}}"]
+            },
+            "description": "ID: TC-BIZ-008\nObjetivo: Vincular artista invitado al evento en borrador\nPrecondiciones: Evento y artista existentes\nActor: ADMIN\nMétodo HTTP y ruta: POST {{baseUrl}}/api/events/{{newEventCode}}/artists/{{artistId}}\nAutorización: Bearer {{adminToken}}\nDatos necesarios: Path variables\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 200 OK\nForma del JSON esperado: EventResponse con artista en el set\nCampos relevantes que deben inspeccionarse: artists conteniendo 'Solar Beat'\nVerificaciones de negocio o seguridad: Artista vinculado correctamente\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-BIZ-009] Flujo C.3 - ADMIN publica el evento",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{newEventCode}}/publish",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events", "{{newEventCode}}", "publish"]
+            },
+            "description": "ID: TC-BIZ-009\nObjetivo: Publicar el evento para habilitar venta y visibilidad pública\nPrecondiciones: Evento en estado DRAFT\nActor: ADMIN\nMétodo HTTP y ruta: PATCH {{baseUrl}}/api/events/{{newEventCode}}/publish\nAutorización: Bearer {{adminToken}}\nDatos necesarios: Path variable\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 200 OK\nForma del JSON esperado: EventResponse con status='PUBLISHED'\nCampos relevantes que deben inspeccionarse: status='PUBLISHED'\nVerificaciones de negocio o seguridad: Transición de estado completada\nConsulta posterior necesaria para comprobar persistencia: GET {{baseUrl}}/api/events/published\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-BIZ-010] Flujo D.1 - USER_A compra ticket para evento publicado",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userEmail\": \"{{userAEmail}}\",\n  \"eventCode\": \"{{publishedEventCode}}\",\n  \"type\": \"GENERAL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tickets"]
+            },
+            "description": "ID: TC-BIZ-010\nObjetivo: Realizar compra de ticket y validar emisión con estado PAID\nPrecondiciones: Evento publicado con aforo\nActor: USER_A\nMétodo HTTP y ruta: POST {{baseUrl}}/api/tickets\nAutorización: Bearer {{userAToken}}\nDatos necesarios: JSON de compra\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 201 Created\nForma del JSON esperado: TicketResponse con status='PAID'\nCampos relevantes que deben inspeccionarse: ticketCode, price=50.00, status='PAID'\nVerificaciones de negocio o seguridad: Ticket emitido y pagado\nConsulta posterior necesaria para comprobar persistencia: N/A\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-BIZ-011] Flujo D.2 - USER_A cancela ticket propio elegible",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/{{ticketCancelableCode}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tickets", "{{ticketCancelableCode}}", "cancel"]
+            },
+            "description": "ID: TC-BIZ-011\nObjetivo: Cancelar la entrada antes del evento y verificar persistencia\nPrecondiciones: Ticket en estado PAID\nActor: USER_A\nMétodo HTTP y ruta: PATCH {{baseUrl}}/api/tickets/{{ticketCancelableCode}}/cancel\nAutorización: Bearer {{userAToken}}\nDatos necesarios: Path variable ticketCode\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 200 OK\nForma del JSON esperado: TicketResponse con status='CANCELLED'\nCampos relevantes que deben inspeccionarse: status='CANCELLED'\nVerificaciones de negocio o seguridad: Cancelación efectiva\nConsulta posterior necesaria para comprobar persistencia: GET {{baseUrl}}/api/tickets/{{ticketCancelableCode}}\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        },
+        {
+          "name": "[TC-BIZ-012] Flujo D.3 - STAFF marca como usado ticket usable",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staffToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/{{ticketUsableCode}}/use",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tickets", "{{ticketUsableCode}}", "use"]
+            },
+            "description": "ID: TC-BIZ-012\nObjetivo: Validar ingreso de asistente en puerta de acceso\nPrecondiciones: Ticket en estado PAID\nActor: STAFF\nMétodo HTTP y ruta: PATCH {{baseUrl}}/api/tickets/{{ticketUsableCode}}/use\nAutorización: Bearer {{staffToken}}\nDatos necesarios: Path variable ticketCode\nInstrucciones para ejecutarla manualmente: Abrir la solicitud en Postman, verificar que el entorno local esté activo, revisar los parámetros y pulsar 'Send'.\nHTTP esperado: 200 OK\nForma del JSON esperado: TicketResponse con status='USED'\nCampos relevantes que deben inspeccionarse: status='USED'\nVerificaciones de negocio o seguridad: Ingreso registrado\nConsulta posterior necesaria para comprobar persistencia: GET {{baseUrl}}/api/tickets/{{ticketUsableCode}}\nQué registrar en la bitácora: Anotar HTTP real, estado JSON y resultado PASS/FAIL/BLOCKED en registro-ejecucion-manual.md"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
